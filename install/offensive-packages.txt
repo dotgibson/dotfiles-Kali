@@ -1,0 +1,74 @@
+# dotfiles-Kali/install/offensive-packages.txt
+# ──────────────────────────────────────────────────────────────────────────────
+# The offensive tool layer for Kali (apt). The Core modern-CLI stack lives in
+# the normal install/packages.txt; THIS file is the role layer on top of it.
+# bootstrap.sh installs these AFTER the OS + Core layers.
+#
+# Most are in Kali's repos (`sudo apt install <pkg>`). The handful that aren't
+# packaged (or move faster than the repo) are flagged → install via their own
+# upstream method, same pattern Core already uses for starship/atuin on some
+# distros.
+#
+# ⚠ Authorized engagements only. Installing ≠ permission to use.
+# ──────────────────────────────────────────────────────────────────────────────
+
+# ── Network / Active Directory ────────────────────────────────────────────────
+netexec              # nxc — successor to CrackMapExec (CME archived 2023)
+nmap
+responder
+impacket-scripts     # ~60 scripts: secretsdump, psexec, ntlmrelayx, GetUserSPNs…
+evil-winrm
+certipy-ad           # AD CS abuse (ESC1–ESC16)
+ldapdomaindump
+enum4linux-ng
+smbmap
+kerbrute             # (may need upstream release; check `apt-cache policy kerbrute`)
+
+# ── BloodHound CE + collectors ────────────────────────────────────────────────
+# BloodHound CE itself is the Postgres-backed web app — run it via the official
+# docker-compose (NOT apt). The COLLECTORS are what you install on the box:
+bloodhound.py        # cross-platform collector; ensure the CE-compatible build
+#                    # nxc's --bloodhound module also collects (see offensive.zsh `bhce`)
+# SharpHound (the C# collector) is dropped on the target, not installed here.
+
+# ── Web app / API ─────────────────────────────────────────────────────────────
+burpsuite
+ffuf
+feroxbuster
+gobuster
+nikto
+sqlmap
+nuclei               # ProjectDiscovery — templated scanner (AI templates in 2026)
+httpx                # ProjectDiscovery — fast HTTP prober
+katana               # ProjectDiscovery — crawler
+wfuzz
+
+# ── Recon / OSINT ─────────────────────────────────────────────────────────────
+amass
+subfinder
+dnsx
+bbot                 # recon engine (pipx/upstream if the repo build lags)
+theharvester
+masscan
+
+# ── C2 / adversary emulation ──────────────────────────────────────────────────
+metasploit-framework
+# sliver            → UPSTREAM: curl https://sliver.sh/install | sudo bash
+#                     (Go C2; current open-source standard, not in Kali repo)
+# havoc             → UPSTREAM build (github.com/HavocFramework/Havoc)
+# caldera           → UPSTREAM/docker (MITRE adversary emulation, ATT&CK-mapped)
+
+# ── Credential attacks ────────────────────────────────────────────────────────
+hashcat
+john                 # john-the-ripper
+hydra
+seclists             # /usr/share/seclists — wordlists the helpers expect
+
+# ── Pivoting / tunneling ──────────────────────────────────────────────────────
+proxychains4
+chisel
+ligolo-ng            # modern reverse-tunnel pivot (upstream if repo build lags)
+socat
+
+# ── Notes / reporting (keep findings OUT of this repo — see offensive.zsh) ─────
+# Engagement data → $ENGAGEMENTS_DIR (~/engagements), gitignored as a backstop.
