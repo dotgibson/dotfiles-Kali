@@ -6,6 +6,11 @@ is the through-line the whole industry (and adversary-emulation tooling like
 Caldera) organizes around. It's a reference, not a runbook — every step is gated
 on **written authorization and a defined scope**.
 
+> Looking for the concrete, copy-paste command syntax per service/port? That's
+> the field reference in [`offensive/hacktheplanet`](offensive/hacktheplanet) —
+> this doc is the map, that file is the commands. (Symlinked to `~/hacktheplanet`
+> by `bootstrap.sh`; `htp` opens it.)
+
 > Rule zero: `mkengagement` writes `scope/scope.txt` *before* anything else and
 > opens it in your editor. Fill it in first. Installing a tool is not permission
 > to point it at anything.

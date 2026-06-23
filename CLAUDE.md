@@ -33,6 +33,7 @@ paranoid `.gitignore` as backup.
 ## Where things are
 
 - `offensive/` — engagement scaffolding (the role layer)
+- `offensive/hacktheplanet` — CTF/HTB/engagement command cheatsheet (field reference under `OFFENSIVE-METHODOLOGY.md`); folds by section in vim, symlinked to `~/hacktheplanet`, opened with `htp`
 - `install/offensive-packages.txt` — offensive tooling; `install/packages.txt` — base
 - `os/kali.zsh`, `os/kali.conf`, `os/kali.gitconfig` — OS overlays
 - `OFFENSIVE-METHODOLOGY.md` — the engagement playbook

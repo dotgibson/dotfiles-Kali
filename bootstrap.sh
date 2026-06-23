@@ -152,6 +152,8 @@ wire_links(){
   say "symlinking OFFENSIVE role layer"
   link "$DOTFILES/offensive/offensive.zsh" "$CONFIG/zsh/offensive.zsh"
   [[ -d "$DOTFILES/offensive/templates" ]] && link "$DOTFILES/offensive/templates" "$CONFIG/kali/templates"
+  # CTF/HTB command cheatsheet — surfaced at ~/hacktheplanet for `vim ~/hacktheplanet`
+  [[ -f "$DOTFILES/offensive/hacktheplanet" ]] && link "$DOTFILES/offensive/hacktheplanet" "$HOME/hacktheplanet"
 
   if [[ ! -f "$HOME/.zshrc" ]] || ! grep -q "dotfiles-managed v2" "$HOME/.zshrc" 2>/dev/null; then
     say "writing .zshrc loader (adds the 'offensive' stage)"
