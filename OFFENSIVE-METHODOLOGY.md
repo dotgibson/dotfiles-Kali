@@ -9,7 +9,8 @@ on **written authorization and a defined scope**.
 > Looking for the concrete, copy-paste command syntax per service/port? That's
 > the field reference in [`offensive/hacktheplanet`](offensive/hacktheplanet) —
 > this doc is the map, that file is the commands. (Symlinked to `~/hacktheplanet`
-> by `bootstrap.sh`; `htp` opens it.)
+> by `bootstrap.sh`; `htp` opens it.) The defensive mirror — what each attack
+> trips, as Splunk/Sentinel detections — is in [`PURPLE-TEAM.md`](PURPLE-TEAM.md).
 
 > Rule zero: `mkengagement` writes `scope/scope.txt` *before* anything else and
 > opens it in your editor. Fill it in first. Installing a tool is not permission

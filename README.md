@@ -105,6 +105,7 @@ before `local` (so a machine-specific override still wins).
 | `offensive/hacktheplanet` | CTF/HTB/engagement command cheatsheet — copy-paste syntax per service/port (the field reference under the methodology map). Folds by section in vim; symlinked to `~/hacktheplanet`, opened with `htp` |
 | `install/offensive-packages.txt` | the apt tool list (installed after the OS + Core layers) |
 | `OFFENSIVE-METHODOLOGY.md` | the phase → MITRE ATT&CK → tool map behind the layer |
+| `PURPLE-TEAM.md` | the defensive mirror of `hacktheplanet` — Splunk/Sentinel detections + event-ID reference for each attack (purple-team perspective / red OPSEC) |
 
 Same discipline as Core: every alias/function touching an optional tool is
 guarded by a `HAVE_*` flag, so the file is **inert** on a box where the tool
