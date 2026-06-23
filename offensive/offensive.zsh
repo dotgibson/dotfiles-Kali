@@ -63,6 +63,8 @@ export ENGAGEMENTS_DIR SECLISTS_DIR WORDLISTS_DIR
 alias hethttp='echo "serving $(pwd) on :8000"; python3 -m http.server 8000'
 # SecLists fast-path: jump to the wordlist tree with your fzf preview stack.
 [[ -d "$SECLISTS_DIR" ]] && alias seclists='cd "$SECLISTS_DIR"'
+# Open the CTF/HTB command cheatsheet (folds by service — `za` toggles a fold).
+[[ -f "$HOME/hacktheplanet" ]] && alias htp='${EDITOR:-nvim} "$HOME/hacktheplanet"'
 
 # ── nmap: a sane default sweep that writes all-formats output into the cwd ────
 # Usage: nmapsweep <target/CIDR>   → ./nmap/<target>.{nmap,gnmap,xml}

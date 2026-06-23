@@ -102,6 +102,7 @@ before `local` (so a machine-specific override still wins).
 |------|------|
 | `offensive/offensive.zsh` | sourced in the `offensive` stage — `HAVE_*` detection, tool ergonomics, engagement scaffolding |
 | `offensive/tmux/tmux-eng.sh` | `prefix + e` popup — fuzzy-jump to an engagement session (twin of Core's sessionizer) |
+| `offensive/hacktheplanet` | CTF/HTB/engagement command cheatsheet — copy-paste syntax per service/port (the field reference under the methodology map). Folds by section in vim; symlinked to `~/hacktheplanet`, opened with `htp` |
 | `install/offensive-packages.txt` | the apt tool list (installed after the OS + Core layers) |
 | `OFFENSIVE-METHODOLOGY.md` | the phase → MITRE ATT&CK → tool map behind the layer |
 
@@ -122,6 +123,7 @@ isn't installed instead of erroring on shell start.
 | `logshell` | record a `script(1)` transcript into the engagement's `notes/` for the audit trail |
 | `smb` / `ldap` / `winrm` | shorthands for `nxc <proto>` |
 | `seclists` | jump to `$SECLISTS_DIR` with the fzf preview stack |
+| `htp` | open the `hacktheplanet` command cheatsheet (`~/hacktheplanet`) in `$EDITOR` |
 
 ## tmux bindings
 
