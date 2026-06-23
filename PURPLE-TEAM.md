@@ -140,7 +140,7 @@ index=main EventCode=4688
 
 **Obfuscated command lines** — `4688` heavy in `,` `^` `%`:
 ```spl
-index=main EventCode=4688 Process_Command_Line IN ("*,*","*^*","*%*")
+index=main EventCode=4688 (Process_Command_Line="*,*" OR Process_Command_Line="*^*" OR Process_Command_Line="*%*")
 | eval n=len(Process_Command_Line)-len(replace(Process_Command_Line,"[,^%]",""))
 | where n > 1
 ```

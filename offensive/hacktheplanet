@@ -7,7 +7,7 @@ altitude: concrete copy-paste command syntax, per service / per port.
 Originally my "Home-Directory" notes file, since expanded with field techniques
 from TrustedSec's "Actionable Purple Teaming" course (Black Hat USA 2023). The
 DEFENSIVE half of that course — the Splunk/Sentinel detections each attack trips
-— lives in the companion ../PURPLE-TEAM.md. It folds in vim/neovim: each section
+— lives in the companion PURPLE-TEAM.md at the repo root. It folds in vim/neovim: each section
 is wrapped in marker banners (the modeline at the very bottom wires foldmethod
 so the folds work with no extra config — open with `vim hacktheplanet`, toggle a
 fold with `za`, close all with `zM`, open all with `zR`).
@@ -66,7 +66,7 @@ nuclei -u <domain> -t dns
 # --- Microsoft 365 / Entra ID (external, unauthenticated) ---
 # Managed vs federated? It changes the whole approach. View the realm XML:
 #   https://login.microsoftonline.com/getuserrealm.srf?login=<user>@<domain>&xml=1
-Invoke-AADIntReconAsOutsider -Domain <domain> | Format-Table   # AADInternals: federation/MDI/domains
+Invoke-AADIntReconAsOutsider -Domain <domain> | Format-Table   # AADInternals (PowerShell): federation/MDI/domains
 ./onedrive_enum.py -U users.txt -d <domain>                    # validate users via OneDrive
 # TeamFiltration: enumerate then spray M365/Teams. Each request authenticates and
 # counts toward lockout — pace it (low & slow) or you lock the tenant out:
@@ -367,8 +367,8 @@ hashid '<hash>'          # or name-that-hash — identify the mode before you bu
 #   full table: hashcat.net/wiki/doku.php?id=example_hashes
 
 # Attack modes (-O = optimized kernel, big speedup; mind the password-length cap):
-hashcat -m 1000 -O hashes.txt rockyou.txt                                   # -a 0 dictionary
-hashcat -m 13100 -O kerb.txt rockyou.txt -r /usr/share/hashcat/rules/best64.rule  # dict + RULES
+hashcat -m 1000 -O hashes.txt /usr/share/wordlists/rockyou.txt              # -a 0 dictionary
+hashcat -m 13100 -O kerb.txt /usr/share/wordlists/rockyou.txt -r /usr/share/hashcat/rules/best64.rule  # dict + RULES
 hashcat -m 1000 -O hashes.txt -a 3 ?u?l?l?l?l?l?d?d                         # -a 3 mask / brute
 hashcat -m 5500 -O hashes.txt -a 6 wordlist.txt ?d?d?d?d                    # -a 6 hybrid word+mask
 # Rules mutate the wordlist (apple -> @ppl3 / apple123 / app); stack them for more reach:
