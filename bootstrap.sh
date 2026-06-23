@@ -79,9 +79,9 @@ provision(){
   apt_install "${base[@]}"
   ok "base packages requested: ${#base[@]}"
 
-  if (( DO_OFFENSIVE )) && [[ -f "$DOTFILES/install/offensive.txt" ]]; then
-    say "offensive tool stack (install/offensive.txt) — heavy, go get coffee"
-    local -a off=(); mapfile -t off < <(read_pkgs "$DOTFILES/install/offensive.txt")
+  if (( DO_OFFENSIVE )) && [[ -f "$DOTFILES/install/offensive-packages.txt" ]]; then
+    say "offensive tool stack (install/offensive-packages.txt) — heavy, go get coffee"
+    local -a off=(); mapfile -t off < <(read_pkgs "$DOTFILES/install/offensive-packages.txt")
     apt_install "${off[@]}"
     ok "offensive packages requested: ${#off[@]}"
   else
@@ -111,6 +111,7 @@ wire_links(){
   say "symlinking Core"
   for f in "$DOTFILES"/core/zsh/*.zsh; do link "$f" "$CONFIG/zsh/$(basename "$f")"; done
   [[ -f "$DOTFILES/core/tmux/tmux.conf" ]] && link "$DOTFILES/core/tmux/tmux.conf" "$CONFIG/tmux/tmux.conf"
+  [[ -f "$DOTFILES/core/tmux/tmux.reset.conf" ]] && link "$DOTFILES/core/tmux/tmux.reset.conf" "$CONFIG/tmux/tmux.reset.conf"
   if [[ -d "$DOTFILES/core/tmux/scripts" ]]; then
     link "$DOTFILES/core/tmux/scripts" "$CONFIG/tmux/scripts"
     chmod +x "$DOTFILES"/core/tmux/scripts/*.sh 2>/dev/null || true
