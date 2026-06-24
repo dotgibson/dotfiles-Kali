@@ -65,6 +65,9 @@ alias hethttp='echo "serving $(pwd) on :8000"; python3 -m http.server 8000'
 [[ -d "$SECLISTS_DIR" ]] && alias seclists='cd "$SECLISTS_DIR"'
 # Open the CTF/HTB command cheatsheet (folds by service — `za` toggles a fold).
 [[ -f "$HOME/hacktheplanet" ]] && alias htp='${EDITOR:-nvim} "$HOME/hacktheplanet"'
+# Companion field references (same fold UX): exploit-dev and defense-evasion.
+[[ -f "$HOME/exploitdev" ]] && alias xdev='${EDITOR:-nvim} "$HOME/exploitdev"'
+[[ -f "$HOME/evasion" ]] && alias evade='${EDITOR:-nvim} "$HOME/evasion"'
 
 # ── nmap: a sane default sweep that writes all-formats output into the cwd ────
 # Usage: nmapsweep <target/CIDR>   → ./nmap/<target>.{nmap,gnmap,xml}

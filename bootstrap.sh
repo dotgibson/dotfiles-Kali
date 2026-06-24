@@ -154,6 +154,9 @@ wire_links(){
   [[ -d "$DOTFILES/offensive/templates" ]] && link "$DOTFILES/offensive/templates" "$CONFIG/kali/templates"
   # CTF/HTB command cheatsheet — surfaced at ~/hacktheplanet for `vim ~/hacktheplanet`
   [[ -f "$DOTFILES/offensive/hacktheplanet" ]] && link "$DOTFILES/offensive/hacktheplanet" "$HOME/hacktheplanet"
+  # Companion field references (same fold style) — surfaced at ~/ for `xdev` / `evade`
+  [[ -f "$DOTFILES/offensive/exploitdev" ]] && link "$DOTFILES/offensive/exploitdev" "$HOME/exploitdev"
+  [[ -f "$DOTFILES/offensive/evasion" ]] && link "$DOTFILES/offensive/evasion" "$HOME/evasion"
 
   if [[ ! -f "$HOME/.zshrc" ]] || ! grep -q "dotfiles-managed v2" "$HOME/.zshrc" 2>/dev/null; then
     say "writing .zshrc loader (adds the 'offensive' stage)"
