@@ -157,6 +157,8 @@ wire_links(){
   # Companion field references (same fold style) — surfaced at ~/ for `xdev` / `evade`
   [[ -f "$DOTFILES/offensive/exploitdev" ]] && link "$DOTFILES/offensive/exploitdev" "$HOME/exploitdev"
   [[ -f "$DOTFILES/offensive/evasion" ]] && link "$DOTFILES/offensive/evasion" "$HOME/evasion"
+  # The IppSec method (workflow + signature moves) — surfaced at ~/ for `ipp`
+  [[ -f "$DOTFILES/offensive/ippsec" ]] && link "$DOTFILES/offensive/ippsec" "$HOME/ippsec"
 
   if [[ ! -f "$HOME/.zshrc" ]] || ! grep -q "dotfiles-managed v2" "$HOME/.zshrc" 2>/dev/null; then
     say "writing .zshrc loader (adds the 'offensive' stage)"

