@@ -19,15 +19,17 @@ responder
 impacket-scripts     # ~60 scripts: secretsdump, psexec, ntlmrelayx, GetUserSPNs…
 evil-winrm
 certipy-ad           # AD CS abuse (ESC1–ESC16)
-ldapdomaindump
+python3-ldapdomaindump  # apt name is python3-ldapdomaindump (bare 'ldapdomaindump' isn't packaged)
 enum4linux-ng
 smbmap
-kerbrute             # (may need upstream release; check `apt-cache policy kerbrute`)
+# kerbrute          → UPSTREAM: not in apt — grab the release binary or `go install`
+#                     github.com/ropnop/kerbrute (see ~/hacktheplanet)
 
 # ── BloodHound CE + collectors ────────────────────────────────────────────────
 # BloodHound CE itself is the Postgres-backed web app — run it via the official
 # docker-compose (NOT apt). The COLLECTORS are what you install on the box:
-bloodhound.py        # cross-platform collector; ensure the CE-compatible build
+bloodhound-ce-python # CE-compatible collector. NOTE: the 'bloodhound.py' apt pkg
+#                    # is the LEGACY (≤4.3.1) collector — its zips don't ingest into CE
 #                    # nxc's --bloodhound module also collects (see offensive.zsh `bhce`)
 # SharpHound (the C# collector) is dropped on the target, not installed here.
 
@@ -39,8 +41,9 @@ gobuster
 nikto
 sqlmap
 nuclei               # ProjectDiscovery — templated scanner (AI templates in 2026)
-httpx                # ProjectDiscovery — fast HTTP prober
-katana               # ProjectDiscovery — crawler
+httpx-toolkit        # ProjectDiscovery httpx — bare 'httpx' apt pkg is the python lib, not this
+# katana            → UPSTREAM (Go): not in apt —
+#                     go install github.com/projectdiscovery/katana/cmd/katana@latest
 wfuzz
 
 # ── Recon / OSINT ─────────────────────────────────────────────────────────────

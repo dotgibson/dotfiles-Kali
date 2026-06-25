@@ -89,13 +89,16 @@ provision(){
   fi
 
   # Tools not reliably in apt — upstream installers (same approach as dotfiles-Fedora).
-  command -v starship >/dev/null || { say "starship (installer)"; curl -fsSL https://starship.rs/install.sh | sh -s -- -y >/dev/null; }
-  command -v atuin    >/dev/null || { say "atuin (installer)";    curl -fsSL https://setup.atuin.sh | sh >/dev/null 2>&1 || true; }
+  # These print progress on purpose: atuin/yazi can fall back to a (silent, multi-minute)
+  # source build, and a suppressed installer looks like a hang. '|| true' keeps each one
+  # non-fatal — they're all HAVE_*-guarded, so the shell works without them.
+  command -v starship >/dev/null || { say "starship (installer)"; curl -fsSL https://starship.rs/install.sh | sh -s -- -y || true; }
+  command -v atuin    >/dev/null || { say "atuin (installer — may compile from source, be patient)"; curl -fsSL https://setup.atuin.sh | sh || true; }
   if ! command -v mise >/dev/null && [[ ! -x "$HOME/.local/bin/mise" ]]; then
-    say "mise (installer)"; curl -fsSL https://mise.run | sh >/dev/null 2>&1 || true
+    say "mise (installer)"; curl -fsSL https://mise.run | sh || true
   fi
   if ! command -v yazi >/dev/null && command -v cargo >/dev/null; then
-    say "yazi (cargo build — slow)"; cargo install --locked yazi-fs yazi-cli >/dev/null 2>&1 || true
+    say "yazi (cargo build from source — several minutes, output below)"; cargo install --locked yazi-fs yazi-cli || true
   fi
 
   if (( IS_WSL )); then
