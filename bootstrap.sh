@@ -98,7 +98,9 @@ provision(){
     say "mise (installer)"; curl -fsSL https://mise.run | sh || true
   fi
   if ! command -v yazi >/dev/null && command -v cargo >/dev/null; then
-    say "yazi (cargo build from source — several minutes, output below)"; cargo install --locked yazi-fs yazi-cli || true
+    # yazi-fm/yazi-cli can't be installed directly from crates.io (their build.rs panics);
+    # upstream requires the yazi-build orchestrator, which pulls in both binaries.
+    say "yazi (cargo build from source — several minutes, output below)"; cargo install --force yazi-build || true
   fi
 
   if (( IS_WSL )); then
