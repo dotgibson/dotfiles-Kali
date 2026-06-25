@@ -103,6 +103,8 @@ before `local` (so a machine-specific override still wins).
 | `offensive/offensive.zsh` | sourced in the `offensive` stage — `HAVE_*` detection, tool ergonomics, engagement scaffolding |
 | `offensive/tmux/tmux-eng.sh` | `prefix + e` popup — fuzzy-jump to an engagement session (twin of Core's sessionizer) |
 | `offensive/hacktheplanet` | CTF/HTB/engagement command cheatsheet — copy-paste syntax per service/port (the field reference under the methodology map). Folds by section in vim; symlinked to `~/hacktheplanet`, opened with `htp` |
+| `offensive/ippsec` | **the method** — workflow habits + signature moves distilled from IppSec's HTB catalog (the recon loop, shell stabilization, the scripted pseudo-shell, the unsticking playbook). The altitude *above* the command refs. Same fold UX; symlinked to `~/ippsec`, opened with `ipp` |
+| `offensive/templates/pseudo-shell.py` | reusable Python `cmd.Cmd` pseudo-shell for blind/awkward RCE (SSTI/injection/deserialization) — IppSec's signature; copy into an engagement's `exploit/` and wire up the request + capture regex |
 | `install/offensive-packages.txt` | the apt tool list (installed after the OS + Core layers) |
 | `OFFENSIVE-METHODOLOGY.md` | the phase → MITRE ATT&CK → tool map behind the layer |
 | `PURPLE-TEAM.md` | the defensive mirror of `hacktheplanet` — Splunk/Sentinel detections + event-ID reference for each attack (purple-team perspective / red OPSEC) |
@@ -124,7 +126,12 @@ isn't installed instead of erroring on shell start.
 | `logshell` | record a `script(1)` transcript into the engagement's `notes/` for the audit trail |
 | `smb` / `ldap` / `winrm` | shorthands for `nxc <proto>` |
 | `seclists` | jump to `$SECLISTS_DIR` with the fzf preview stack |
-| `htp` | open the `hacktheplanet` command cheatsheet (`~/hacktheplanet`) in `$EDITOR` |
+| `htp` / `ipp` / `xdev` / `evade` | open the field refs (`~/hacktheplanet` / `~/ippsec` / `~/exploitdev` / `~/evasion`) in `$EDITOR` |
+| `note "<text>"` | timestamped append to the engagement's `notes.md` (IppSec note discipline); `note` with no args opens it |
+| `cde` | `cd` back to the active engagement tree (`$ENGAGEMENT`) |
+| `lhost [iface]` | print your attacker/VPN IP (the `<your-ip>` for reverse shells) — prefers `tun0`, falls back to primary iface |
+| `ttyup` | print the TTY-upgrade stabilization sequence with your local rows/cols pre-filled |
+| `rocks <keyword>` | open an `ippsec.rocks` search for a technique/keyword |
 
 ## tmux bindings
 

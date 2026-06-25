@@ -68,6 +68,9 @@ alias hethttp='echo "serving $(pwd) on :8000"; python3 -m http.server 8000'
 # Companion field references (same fold UX): exploit-dev and defense-evasion.
 [[ -f "$HOME/exploitdev" ]] && alias xdev='${EDITOR:-nvim} "$HOME/exploitdev"'
 [[ -f "$HOME/evasion" ]] && alias evade='${EDITOR:-nvim} "$HOME/evasion"'
+# The IppSec method — workflow habits + signature moves (the altitude above the
+# command refs: the recon loop, shell stabilization, the scripted pseudo-shell).
+[[ -f "$HOME/ippsec" ]] && alias ipp='${EDITOR:-nvim} "$HOME/ippsec"'
 
 # ── nmap: a sane default sweep that writes all-formats output into the cwd ────
 # Usage: nmapsweep <target/CIDR>   → ./nmap/<target>.{nmap,gnmap,xml}
@@ -158,6 +161,90 @@ logshell() {
   local f="$dir/session-$(date +%Y%m%d-%H%M%S).log"
   echo ":: recording shell → $f  (exit/Ctrl-D to stop)"
   script -q "$f"
+}
+
+# ── IppSec-method ergonomics (see ~/ippsec / `ipp`) ───────────────────────────
+# These turn the file's habits into one-keystroke moves: the recon loop only
+# pays off if stabilizing a shell and jotting a note are frictionless.
+
+# cde — cd back to the active engagement tree ($ENGAGEMENT, set by mkengagement/eng).
+cde() {
+  [[ -n "${ENGAGEMENT:-}" && -d "$ENGAGEMENT" ]] || {
+    echo "no active engagement — run mkengagement/eng first"; return 1; }
+  cd "$ENGAGEMENT"
+}
+
+# note — append a timestamped line to the engagement's notes.md. Note discipline
+# is IppSec's force-multiplier: capture every state change, cred, and host the
+# instant it happens, so the report (and your re-entry) writes itself.
+# Usage: note "got www-data via Gobox SSTI"   |   note   (opens notes.md in $EDITOR)
+note() {
+  local f="${ENGAGEMENT:-$PWD}/notes.md"; mkdir -p "$(dirname "$f")"
+  if [[ $# -eq 0 ]]; then ${EDITOR:-nvim} "$f"; return; fi
+  printf '%s  %s\n' "$(date '+%F %T')" "$*" >> "$f"
+  echo ":: noted → $f"
+}
+
+# lhost — print YOUR attacker IP (the <your-ip> that fills reverse shells / file
+# servers). Prefers the VPN tun (HTB/engagement) and falls back to the primary
+# global iface. Pass an iface name to force one: lhost eth0
+lhost() {
+  local iface="${1:-}" ip=""
+  if [[ -z "$iface" ]]; then
+    for iface in tun0 tun1 tap0 wg0; do
+      ip=$(ip -4 -brief addr show "$iface" 2>/dev/null | awk '{print $3}' | cut -d/ -f1)
+      [[ -n "$ip" ]] && break
+    done
+    # Fallback: the default-route SOURCE IP (Core's idiom in functions.zsh) — picks
+    # the routable LAN address, not the first global iface (which may be a docker bridge).
+    [[ -z "$ip" ]] && ip=$(ip route get 1.1.1.1 2>/dev/null \
+                            | awk '{for(i=1;i<=NF;i++) if($i=="src"){print $(i+1);exit}}')
+  else
+    ip=$(ip -4 -brief addr show "$iface" 2>/dev/null | awk '{print $3}' | cut -d/ -f1)
+  fi
+  [[ -z "$ip" ]] && { echo "no IPv4 found (try: lhost <iface>)"; return 1; }
+  echo "$ip"
+}
+
+# ttyup — print the IppSec TTY-upgrade sequence with YOUR local rows/cols already
+# filled in, so stabilizing a dumb shell is copy-paste. Run it on the ATTACKER
+# side (it reads your terminal size), then paste the steps in order.
+ttyup() {
+  local rows cols; rows=$(tput lines 2>/dev/null) cols=$(tput cols 2>/dev/null)
+  cat <<EOF
+# ── stabilize a dumb shell (run these in order) ───────────────────────────────
+# 1) on the TARGET:
+python3 -c 'import pty;pty.spawn("/bin/bash")'   # or: script -qc /bin/bash /dev/null
+# 2) background it:  Ctrl-Z
+# 3) on YOUR box:
+stty raw -echo; fg
+# 4) press Enter, then on the TARGET:
+export TERM=xterm
+stty rows ${rows:-50} cols ${cols:-200}
+# (prompt wrecked after the shell dies?  ->  stty sane   or   reset)
+EOF
+}
+
+# rocks — open an ippsec.rocks search for a technique/keyword. The index is a
+# tool: "I don't know how to attack X" is a search, not a wall.
+# Usage: rocks forward shell    |    rocks kerberoast
+rocks() {
+  [[ $# -eq 0 ]] && { echo "Usage: rocks <keyword…>   (searches ippsec.rocks)"; return 1; }
+  # Percent-encode the WHOLE query — the term lands in the URL fragment, so a bare
+  # '#', '?', '&' or '%' would otherwise break it. Only unreserved chars pass through.
+  local s="$*" q="" c i
+  for (( i = 1; i <= ${#s}; i++ )); do
+    c="${s[i]}"
+    case "$c" in
+      [a-zA-Z0-9._~-]) q+="$c" ;;
+      *) q+=$(printf '%%%02X' "'$c") ;;
+    esac
+  done
+  local url="https://ippsec.rocks/?#$q"
+  if command -v xdg-open >/dev/null 2>&1; then xdg-open "$url" >/dev/null 2>&1
+  elif command -v wslview >/dev/null 2>&1; then wslview "$url"
+  elif command -v explorer.exe >/dev/null 2>&1; then explorer.exe "$url" 2>/dev/null
+  else echo "$url"; fi
 }
 
 unfunction _have 2>/dev/null

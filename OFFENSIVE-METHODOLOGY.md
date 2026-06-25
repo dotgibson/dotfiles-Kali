@@ -9,11 +9,15 @@ on **written authorization and a defined scope**.
 > Looking for the concrete, copy-paste command syntax per service/port? That's
 > the field reference in [`offensive/hacktheplanet`](offensive/hacktheplanet) —
 > this doc is the map, that file is the commands. (Symlinked to `~/hacktheplanet`
-> by `bootstrap.sh`; `htp` opens it.) Two companion field references sit at the
+> by `bootstrap.sh`; `htp` opens it.) Companion field references sit at the
 > same altitude: [`offensive/exploitdev`](offensive/exploitdev) (`xdev`) for binary
 > exploitation, and [`offensive/evasion`](offensive/evasion) (`evade`) for AV/AMSI/
-> AppLocker evasion and breaching hardened defenses. The defensive mirror — what
-> each attack trips, as Splunk/Sentinel detections — is in [`PURPLE-TEAM.md`](PURPLE-TEAM.md).
+> AppLocker evasion and breaching hardened defenses. One altitude *up* — the
+> working **method** that decides which command you reach for and what to do when
+> you're stuck (the "always be running recon" loop, shell stabilization, the
+> scripted pseudo-shell) — is [`offensive/ippsec`](offensive/ippsec) (`ipp`),
+> distilled from IppSec's HTB catalog. The defensive mirror — what each attack
+> trips, as Splunk/Sentinel detections — is in [`PURPLE-TEAM.md`](PURPLE-TEAM.md).
 
 > Rule zero: `mkengagement` writes `scope/scope.txt` *before* anything else and
 > opens it in your editor. Fill it in first. Installing a tool is not permission
@@ -62,7 +66,10 @@ apt package).
   Client data in a public showcase repo is a career-ender.
 - **Audit trail.** `logshell` records a `script(1)` transcript into the
   engagement's `notes/` so you can reconstruct exactly what you ran and when —
-  for the report and for deconfliction.
+  for the report and for deconfliction. `note "<text>"` adds timestamped
+  observations to `notes.md` as you go (IppSec's note discipline — see
+  [`offensive/ippsec`](offensive/ippsec)): capture every state change, cred, and
+  host the instant it happens so the report writes itself.
 - **WSL2 gotcha (already in PORTING-MATRIX).** A listener / reverse shell in Kali
   under WSL2 isn't reachable from your LAN until you set
   `networkingMode=mirrored` in the **Windows-side** `%UserProfile%\.wslconfig`
