@@ -45,7 +45,6 @@ ssh/*
 
 # ── local-only / generated ────────────────────────────────────────────────────
 zsh/local.zsh
-core/nvim/lazy-lock.json
 *.pre-dotfiles.*
 *.log
 *.bak
