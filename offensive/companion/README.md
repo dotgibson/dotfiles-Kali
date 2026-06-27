@@ -65,8 +65,8 @@ No mainstream tool ships attacks paired with the telemetry they trip.
 
 ## Corpus
 
-10 paired concepts + 1 unpaired recon entry (SMB enum), spanning Credential
-Access, Lateral Movement, and Discovery:
+12 paired concepts + 1 unpaired recon entry (SMB enum), spanning Credential
+Access, Privilege Escalation, Lateral Movement, and Discovery:
 
 | Attack (red) | Detection (blue) | ATT&CK |
 | --- | --- | --- |
@@ -80,13 +80,17 @@ Access, Lateral Movement, and Discovery:
 | AD CS ESC1 (certipy) | `4886` SAN mismatch | T1649 |
 | Remote LSASS dump (lsassy) | `4656` dump-shaped handle | T1003.001 |
 | RDP session hijack (tscon) | `4688` tscon `/dest:rdp-tcp#` | T1563.002 |
+| Shadow Credentials (certipy) | `5136` msDS-KeyCredentialLink write | T1556 |
+| RBCD (impacket) | `5136` msDS-AllowedToActOnBehalfOfOtherIdentity | T1098 |
 
 Growth is mechanical now that the drift gate exists: author the red+blue entry
-pair, mark the matching flat blocks (blue into `PURPLE-TEAM.md`; red into
-`hacktheplanet` *only when the command is atomic and slot-mappable*), then
-`gen-views.sh`. Rich multi-step red chains (relay, coercion, AD CS) stay
-hand-authored in `hacktheplanet` — the entry still powers `htpx` and the paired
-preview.
+pair, mark the matching flat blocks, then `gen-views.sh`. The blue detection
+always generates into `PURPLE-TEAM.md`. The red side generates into
+`hacktheplanet` whenever its commands are slot-mappable (even multi-step — see
+RBCD); only commands that carry inline comments or are scattered across existing
+folds stay hand-authored. Either way the entry powers `htpx` and the paired
+preview. **Net-new** techniques (Shadow Credentials, RBCD) were authored as
+entries first and flowed into *both* flat views via the bridge.
 
 ## Source of truth (decided — the hybrid)
 

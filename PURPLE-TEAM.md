@@ -255,6 +255,39 @@ index=main EventCode=4886
 Also watch `5136` writes to the `userCertificate` attribute.
 <!-- companion:end adcs-esc1-4886 -->
 
+### Delegation & key-trust abuse
+
+<!-- companion:gen shadow-credentials-5136 -->
+**Detect Shadow Credentials (5136 msDS-KeyCredentialLink write)**
+
+The attack *must* write the `msDS-KeyCredentialLink` attribute — so a `5136`
+directory-object-modified event naming that attribute is the invariant. Almost
+nothing legitimately writes it except Windows Hello for Business enrollment, so
+scope out those known sources and alert on the rest. (Requires the directory-
+service-access audit subcategory + a SACL on the objects.)
+
+```spl
+index=main EventCode=5136 Attribute_LDAP_Display_Name="msDS-KeyCredentialLink"
+| table _time, host, Subject_Account_Name, Object_DN, Operation_Type
+```
+<!-- companion:end shadow-credentials-5136 -->
+
+<!-- companion:gen rbcd-5136 -->
+**Detect RBCD abuse (5136 msDS-AllowedToActOnBehalfOfOtherIdentity write)**
+
+Configuring RBCD means writing `msDS-AllowedToActOnBehalfOfOtherIdentity` on the
+target computer — a `5136` naming that attribute is the invariant. Legitimately
+it's set by admins delegating a service; a write sourced from a normal user (not a
+delegation admin) onto a computer object is the anomaly. Pair with a `4741`
+computer-account-created burst (the attacker's machine account) for higher
+fidelity.
+
+```spl
+index=main EventCode=5136 Attribute_LDAP_Display_Name="msDS-AllowedToActOnBehalfOfOtherIdentity"
+| table _time, host, Subject_Account_Name, Object_DN, Operation_Type
+```
+<!-- companion:end rbcd-5136 -->
+
 ---
 
 ## Windows Event ID quick reference
