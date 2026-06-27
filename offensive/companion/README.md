@@ -65,7 +65,7 @@ No mainstream tool ships attacks paired with the telemetry they trip.
 
 ## Corpus
 
-8 paired concepts + 1 unpaired recon entry (SMB enum), spanning Credential
+10 paired concepts + 1 unpaired recon entry (SMB enum), spanning Credential
 Access, Lateral Movement, and Discovery:
 
 | Attack (red) | Detection (blue) | ATT&CK |
@@ -78,6 +78,8 @@ Access, Lateral Movement, and Discovery:
 | NTLM relay | `4624` workstation mismatch | T1557.001 |
 | Coerce DC (PetitPotam/printerbug) | `5145` named-pipe access | T1187 |
 | AD CS ESC1 (certipy) | `4886` SAN mismatch | T1649 |
+| Remote LSASS / LSA secrets | `4656` dump-shaped handle | T1003.001 |
+| RDP session hijack (tscon) | `4688` tscon `/dest:rdp-tcp#` | T1563.002 |
 
 Growth is mechanical now that the drift gate exists: author the red+blue entry
 pair, mark the matching flat blocks (blue into `PURPLE-TEAM.md`; red into
