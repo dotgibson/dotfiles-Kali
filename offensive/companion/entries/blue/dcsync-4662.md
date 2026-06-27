@@ -18,3 +18,7 @@ accounts, so a user/admin SID requesting it is the anomaly.
 index=main EventCode=4662 Access_Mask="0x100" Security_ID!="S-1-5-18"
 | stats count by host, Account_Name, Object_Server | sort -count
 ```
+
+Tighter: alert on `Properties` containing the **DS-Replication-Get-Changes-All**
+extended right `1131f6ad-9c07-11d1-f79f-00c04fc2dcd2` requested by anything that
+isn't a domain controller.

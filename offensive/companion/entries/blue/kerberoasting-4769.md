@@ -12,7 +12,8 @@ pair: kerberoast-getuserspns
 
 Detect on the invariant, not the IOC: an RC4 (`0x17`) service ticket for a
 non-machine, non-krbtgt SPN. The encryption downgrade is the signal even when
-ticket flags look normal.
+ticket flags look normal — tools like Orpheus force RC4 precisely to keep the
+roast crackable, so the downgrade itself is the tell.
 
 ```spl
 index=main EventCode=4769 Service_Name!="*$" Service_Name!="krbtgt"

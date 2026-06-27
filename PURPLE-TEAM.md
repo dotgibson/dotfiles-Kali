@@ -42,6 +42,11 @@ behind hunting it. Field notes from TrustedSec's *Actionable Purple Teaming*
 Queries assume a Windows Security / Sysmon feed in `index=main`. Field names
 follow the common Splunk add-on schema — adjust to your CIM/normalization.
 
+> Blocks fenced by `<!-- companion:gen ID -->` markers are **generated** from the
+> structured companion (`offensive/companion/entries/`), which is canonical for
+> those — edit the entry and run `offensive/companion/gen-views.sh`, not the block
+> here (CI rejects a hand-edit). Everything outside the markers is hand-authored.
+
 ### Recon / credential access
 
 **Password spray (many accounts, one source)** — `4625` failed logons:
@@ -52,14 +57,29 @@ index=main EventCode=4625 NOT (Source_Network_Address IN ("-","127.0.0.1"))
 | where Accounts > 10 | sort -Accounts
 ```
 
-**Kerbrute / AS-REP probing** — `4771` Kerberos pre-auth failures, code `0x18`:
+<!-- companion:gen asrep-probing-4771 -->
+**Detect AS-REP / Kerbrute probing (4771 0x18)**
+
+One client address generating Kerberos pre-auth failures (`4771`, failure code
+`0x18`) across many distinct accounts is the spray/roast tell — a real user
+fat-fingers their own name, not five-plus others. Tune the threshold to the
+environment.
+
 ```spl
 index=main EventCode=4771 Failure_Code="0x18"
 | stats dc(Account_Name) AS UniqueAccounts by host, Client_Address
 | where UniqueAccounts > 5
 ```
+<!-- companion:end asrep-probing-4771 -->
 
-**Kerberoasting** — `4769` TGS requests, RC4 (`0x17`) and non-machine SPNs:
+<!-- companion:gen kerberoasting-4769 -->
+**Detect Kerberoasting (4769 RC4 TGS)**
+
+Detect on the invariant, not the IOC: an RC4 (`0x17`) service ticket for a
+non-machine, non-krbtgt SPN. The encryption downgrade is the signal even when
+ticket flags look normal — tools like Orpheus force RC4 precisely to keep the
+roast crackable, so the downgrade itself is the tell.
+
 ```spl
 index=main EventCode=4769 Service_Name!="*$" Service_Name!="krbtgt"
     Ticket_Encryption_Type=0x17
@@ -67,8 +87,7 @@ index=main EventCode=4769 Service_Name!="*$" Service_Name!="krbtgt"
     by Client_Address, Account_Name
 | sort -ServiceAccounts
 ```
-*(Orpheus and similar tools force RC4 to make roasting crackable — the encryption
-downgrade itself is the tell, even when ticket-option flags look normal.)*
+<!-- companion:end kerberoasting-4769 -->
 
 **LDAP recon by one principal** — explicit-cred logons `4648` fanning out:
 ```spl
@@ -98,12 +117,20 @@ index=main EventCode=5145 Access_Mask="0x3"
 
 ### Lateral movement & dumping
 
-**Lateral movement (one source, many hosts)** — `4624` type 3 fan-out:
+<!-- companion:gen lateral-4624-fanout -->
+**Detect lateral movement (4624 type-3 fan-out)**
+
+One source address logging on (`4624` type 3, network) to many distinct hosts in
+a short window is the reuse pattern — pass-the-hash, sprayed creds, or a relay all
+fan out the same way. The auth succeeds, so the signal is the breadth, not a
+failure.
+
 ```spl
 index=main EventCode=4624 Logon_Type=3 NOT (Source_Network_Address IN ("-","::1"))
 | stats dc(host) AS Hosts by Source_Network_Address
 | where Hosts > 2 | sort -Hosts
 ```
+<!-- companion:end lateral-4624-fanout -->
 
 **LSASS access (credential theft)** — `4656` handle to lsass with dump-shaped masks:
 ```spl
@@ -120,14 +147,22 @@ index=main EventCode=5145 Relative_Target_Name IN ("svcctl","winreg")
 | table _time, host, Account_Name, Source_Address, Relative_Target_Name
 ```
 
-**DCSync / NTDS replication** — `4662` directory access on a DC by a non-system SID:
+<!-- companion:gen dcsync-4662 -->
+**Detect DCSync / NTDS replication (4662)**
+
+A `4662` directory-access event with the replication access mask (`0x100`) from a
+non-system SID is the signal — legitimate replication comes from DC machine
+accounts, so a user/admin SID requesting it is the anomaly.
+
 ```spl
 index=main EventCode=4662 Access_Mask="0x100" Security_ID!="S-1-5-18"
 | stats count by host, Account_Name, Object_Server | sort -count
 ```
-*Tighter:* alert on `Properties` containing the **DS-Replication-Get-Changes-All**
+
+Tighter: alert on `Properties` containing the **DS-Replication-Get-Changes-All**
 extended right `1131f6ad-9c07-11d1-f79f-00c04fc2dcd2` requested by anything that
 isn't a domain controller.
+<!-- companion:end dcsync-4662 -->
 
 ### Execution, persistence, AD CS
 

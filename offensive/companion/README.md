@@ -15,6 +15,7 @@ decisions*).
 ```
 companion/
 ├── htpx                     # fzf browser: search → preview attack + its detection → fill slots → clip
+├── gen-views.sh             # render entry-backed blocks into the flat views (+ --check drift gate)
 └── entries/
     ├── red/*.md             # attacks   (frontmatter + command template)
     └── blue/*.md            # detections (frontmatter + SPL), paired back to red
@@ -68,15 +69,38 @@ No mainstream tool ships attacks paired with the telemetry they trip.
 prove the schema, the purple pivot, and slot-substitution across multiple ATT&CK
 tactics (Credential Access, Lateral Movement, Discovery).
 
+## Source of truth (decided — the hybrid)
+
+The "do the entries become canonical?" question is **resolved**, but not as the
+original binary. `hacktheplanet` is 489 lines and most of it is *tradecraft prose*
+— dorks, enum sequencing, conditional advice, warnings — that doesn't fit the
+entry schema; generating the whole file from rigid entries would either lose that
+prose or bloat the schema into freeform markdown. So:
+
+- **Entries are canonical for the paired red↔blue attack/detection slice only.**
+  That's the part that genuinely *is* `{id, title, attack, command}`-shaped and
+  benefits from ATT&CK tags, slot-fill, and the purple pivot.
+- **The flat files stay canonical for everything else** — the prose the schema
+  can't hold.
+- **Where they overlap, the entry wins via generation.** A flat file opts a block
+  in with `<!-- companion:gen ID -->` … `<!-- companion:end ID -->` markers;
+  `gen-views.sh` regenerates the marked blocks from the entry, and
+  `gen-views.sh --check` (run in CI, `.github/workflows/companion.yml`) fails on
+  drift. Content outside the markers is never touched.
+
+This kills drift on the overlap *without* a 60-entry migration and *without*
+giving up the rich prose. Workflow: edit the entry → `gen-views.sh` → commit both.
+
+`PURPLE-TEAM.md` is wired up first (4 detections; its SPL has no target slots, so
+no placeholder translation). The **red-side `hacktheplanet` retrofit is a
+deliberate follow-up** — it needs a `{{slot}}` → `<angle-bracket>` reverse map to
+match that file's house style.
+
 ## Open decisions (before this graduates from MVP)
 
-1. **Source of truth / drift.** Either these entries *become* canonical (generate
-   the folded `hacktheplanet`/`PURPLE-TEAM.md` views *from* them), or they stay a
-   secondary view (and risk drift — the repo's own `/doc-audit` worry). Pick one
-   before converting the full ~60 entries.
-2. **ATT&CK tagging is 100% manual** — neither source carries technique IDs today.
+1. **ATT&CK tagging is 100% manual** — neither source carries technique IDs today.
    Tagging both colours with the *same* technique IDs turns `pair:` into a
    derivable join (not just a hand-kept link).
-3. **Standalone vs in-repo.** If this grows real tooling it likely wants its own
+2. **Standalone vs in-repo.** If this grows real tooling it likely wants its own
    repo (installable independent of the dotfiles); for now it lives in the Kali
    role layer where the content already is.
