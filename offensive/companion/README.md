@@ -1,14 +1,15 @@
-# companion — structured, ATT&CK-tagged, red↔blue-paired pentest reference (MVP)
+# companion — structured, ATT&CK-tagged, red↔blue-paired pentest reference
 
-An **experiment / MVP proof**, not yet the source of truth. It restructures a
-small slice of the offensive corpus into machine-readable entries so the same
+Restructures the offensive corpus into machine-readable entries so the same
 content can be **searched, ATT&CK-tagged, target-substituted, and paired with its
 blue detection** — the shape a standalone terminal companion would take.
 
-It is **purely additive**: it does **not** touch `hacktheplanet` or
-`PURPLE-TEAM.md`. Those remain canonical. The "which file is the source of truth"
-question is deliberately deferred until this earns its place (see *Open
-decisions*).
+For the paired red↔blue **attack/detection slice it covers, the entries are the
+source of truth**: where they overlap `hacktheplanet` / `PURPLE-TEAM.md`, the flat
+files' blocks are *generated* from the entries (inside `companion:gen` markers) and
+CI rejects drift. Everything those flat files hold that *isn't* a clean paired
+attack — the tradecraft prose, dorks, multi-step chains — stays hand-authored and
+canonical there. See *Source of truth* below for the full model.
 
 ## What's here
 
@@ -62,12 +63,26 @@ The `pair:` field makes the **purple pivot** nearly free: selecting an attack
 previews its detection right beside it (see Kerberoast ↔ `4769`, DCSync ↔ `4662`).
 No mainstream tool ships attacks paired with the telemetry they trip.
 
-## Scope of this MVP
+## Corpus
 
-4 paired concepts (Kerberoast ↔ `4769`, DCSync ↔ `4662`, AS-REP roasting ↔
-`4771`, pass-the-hash ↔ `4624`) + 1 unpaired recon entry (SMB enum) — enough to
-prove the schema, the purple pivot, and slot-substitution across multiple ATT&CK
-tactics (Credential Access, Lateral Movement, Discovery).
+6 paired concepts + 1 unpaired recon entry (SMB enum), spanning Credential
+Access, Lateral Movement, and Discovery:
+
+| Attack (red) | Detection (blue) | ATT&CK |
+| --- | --- | --- |
+| Kerberoast SPNs | `4769` RC4 TGS | T1558.003 |
+| AS-REP roast | `4771` pre-auth `0x18` | T1558.004 |
+| DCSync | `4662` replication | T1003.006 |
+| Pass-the-hash lateral | `4624` type-3 fan-out | T1550.002 |
+| NTLM relay | `4624` workstation mismatch | T1557.001 |
+| Coerce DC (PetitPotam/printerbug) | `5145` named-pipe access | T1187 |
+
+Growth is mechanical now that the drift gate exists: author the red+blue entry
+pair, mark the matching flat blocks (blue into `PURPLE-TEAM.md`; red into
+`hacktheplanet` *only when the command is atomic and slot-mappable*), then
+`gen-views.sh`. Rich multi-step red chains (relay, coercion, AD CS) stay
+hand-authored in `hacktheplanet` — the entry still powers `htpx` and the paired
+preview.
 
 ## Source of truth (decided — the hybrid)
 

@@ -97,8 +97,14 @@ index=main EventCode=4648 Network_Address!="-"
 
 ### Poisoning, relay, coercion
 
-**NTLM relay** — `4624` where the workstation name doesn't match the source host
-(the auth was relayed from elsewhere):
+<!-- companion:gen ntlm-relay-4624 -->
+**Detect NTLM relay (4624 workstation mismatch)**
+
+A relayed logon carries the *victim's* workstation name but arrives from the
+*relay's* source address — so the tell is a `4624` whose `Workstation_Name`
+doesn't resolve to its `Source_Network_Address`. That mismatch is the invariant;
+the attacker can't relay without it.
+
 ```spl
 index=main EventCode=4624 Workstation_Name!="-" Source_Port!="0"
 | eval RelayedFrom=if(host!=Workstation_Name, Workstation_Name, "")
@@ -106,14 +112,23 @@ index=main EventCode=4624 Workstation_Name!="-" Source_Port!="0"
 | where RelayedFrom!="" AND Source_Network_Address!=IP
 | table _time, host, Account_Name, Source_Network_Address, RelayedFrom, IP
 ```
+<!-- companion:end ntlm-relay-4624 -->
 
-**Coercion (PetitPotam / printerbug / Dementor)** — `5145` detailed share access
-to the coercion named pipes:
+<!-- companion:gen coercion-5145 -->
+**Detect coercion (5145 named-pipe access)**
+
+Every coercion vector reaches the same handful of named pipes — `spoolss`,
+`efsrpc`, `lsarpc`, `netlogon`, `lsass` — over `IPC$` with a detailed
+file-share-access event (`5145`). Detect on the pipe set, not the tool: the
+target endpoint can't change even as the coercion technique does.
+
 ```spl
 index=main EventCode=5145 Access_Mask="0x3"
+| regex Share_Name="(?i).*ipc\$$"
 | regex Relative_Target_Name="(?i)(spoolss|efsrpc|lsarpc|netlogon|lsass)"
-| table _time, host, Account_Name, Source_Address, Relative_Target_Name
+| table _time, host, Account_Name, Source_Address, Share_Name, Relative_Target_Name
 ```
+<!-- companion:end coercion-5145 -->
 
 ### Lateral movement & dumping
 
