@@ -65,7 +65,7 @@ No mainstream tool ships attacks paired with the telemetry they trip.
 
 ## Corpus
 
-15 paired concepts + 1 unpaired recon entry (SMB enum), spanning Credential
+16 paired concepts + 1 unpaired recon entry (SMB enum), spanning Credential
 Access, Privilege Escalation, Lateral Movement, and Discovery:
 
 | Attack (red) | Detection (blue) | ATT&CK |
@@ -85,6 +85,7 @@ Access, Privilege Escalation, Lateral Movement, and Discovery:
 | Unconstrained delegation → DC TGT | `4624` DC machine-acct → non-DC _(soft)_ | T1558 |
 | DPAPI domain backup key | `5145` protected_storage pipe | T1555 |
 | SeImpersonate → SYSTEM (Potato) | `4688` service-acct → SYSTEM shell _(moderate)_ | T1134.001 |
+| Device-code phishing (Entra) | Entra sign-in `deviceCode` flow _(KQL, cloud)_ | T1528 |
 
 Growth is mechanical now that the drift gate exists: author the red+blue entry
 pair, mark the matching flat blocks, then `gen-views.sh`. The blue detection
@@ -94,6 +95,13 @@ RBCD); only commands that carry inline comments or are scattered across existing
 folds stay hand-authored. Either way the entry powers `htpx` and the paired
 preview. **Net-new** techniques (Shadow Credentials, RBCD) were authored as
 entries first and flowed into *both* flat views via the bridge.
+
+**Cloud pairs are companion-only.** The device-code-phishing pair is the first
+outside on-prem AD: its detection is an Entra sign-in log (KQL), which doesn't
+belong in `PURPLE-TEAM.md`'s Windows-Security-log SPL frame, so it isn't generated
+into either flat view — it lives only in the entries, where `htpx` still gives the
+full purple pivot. A clean demonstration that the entries are a superset of the
+on-prem flat references (and a natural seam for a future standalone/cloud split).
 
 ## Source of truth (decided — the hybrid)
 
