@@ -51,8 +51,9 @@ htpx            # pick an attack; preview shows it + its blue detection;
 `htpx` is on the shell as of bootstrap: `companion/` symlinks to `~/companion`
 and `offensive.zsh` defines an `htpx` function. From a checkout you can also run
 `./htpx` directly. It needs `fzf`; `bat` (preview) and `clip` (Core clipboard)
-are used if present, else it falls back to `cat`/stdout. No `yq` dependency — the
-flat frontmatter is parsed with `awk`.
+are used if present, else it falls back to `cat`/stdout. No `yq` dependency —
+`htpx` reads only the scalar top-level fields it needs (`title:`, `pair:`) from
+the frontmatter with `awk` (the nested `attack:` block is for humans/greppers).
 
 ## The differentiator
 
