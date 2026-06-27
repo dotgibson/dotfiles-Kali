@@ -94,8 +94,8 @@ giving up the rich prose. Workflow: edit the entry → `gen-views.sh` → commit
 
 **Both sides are wired.** The render shape keys off the entry's colour:
 
-- **Blue** (`PURPLE-TEAM.md`) — `**title**` + prose + a fenced ```spl detection.
-  Its SPL has no target slots, so no placeholder translation.
+- **Blue** (`PURPLE-TEAM.md`) — `**title**` + prose + a fenced `spl` detection
+  block. Its SPL has no target slots, so no placeholder translation.
 - **Red** (`hacktheplanet`) — just the raw command lines in that file's terse,
   command-first house style, with the entry's `{{slots}}` reverse-mapped to its
   `<angle-bracket>` vocabulary (`{{rhost}}`→`<ip_address>`, `{{nthash}}`→`<NThash>`,

@@ -50,7 +50,7 @@ CHECK=0
 # a generated red block is byte-identical to the hand-written command it replaces.
 SLOT_TO_ANGLE='
   s/\{\{rhost\}\}/<ip_address>/g
-  s/\{\{lhost\}\}/<lhost>/g
+  s/\{\{lhost\}\}/<your-ip>/g
   s/\{\{domain\}\}/<domain>/g
   s/\{\{user\}\}/<user>/g
   s/\{\{password\}\}/<password>/g
