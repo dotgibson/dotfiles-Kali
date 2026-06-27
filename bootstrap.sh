@@ -7,19 +7,31 @@
 #   ./bootstrap.sh                 # full: apt base + offensive tools + symlinks
 #   ./bootstrap.sh --links-only    # just (re)create symlinks (no apt)
 #   ./bootstrap.sh --no-offensive  # base + symlinks, skip the heavy tool install
+#   ./bootstrap.sh --only zsh,nvim # link ONLY these Core module groups
+#   ./bootstrap.sh --skip tmux     # link everything EXCEPT these groups
+#
+# Module groups (for --only/--skip): zsh nvim tmux git prompt tools — Core wiring
+# only; the offensive role layer is separate (governed by --no-offensive).
 set -euo pipefail
 
 DOTFILES="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 CONFIG="${XDG_CONFIG_HOME:-$HOME/.config}"
 LINKS_ONLY=0
 DO_OFFENSIVE=1
+# --only/--skip are validated by the shared lib (blib_select), sourced AFTER this
+# loop — capture the raw values now and apply them below.
+ONLY_RAW="" SKIP_RAW="" ONLY_SEEN=0 SKIP_SEEN=0
 
-for a in "$@"; do case "$a" in
+while [[ $# -gt 0 ]]; do case "$1" in
   --links-only) LINKS_ONLY=1 ;;
   --no-offensive) DO_OFFENSIVE=0 ;;
-  -h | --help) sed -n '2,9p' "$0"; exit 0 ;;
-  *) echo "unknown arg: $a" >&2; exit 1 ;;
-esac; done
+  --only) [[ $# -ge 2 ]] || { echo "--only requires module names, e.g. --only zsh,nvim" >&2; exit 1; }; ONLY_RAW="$2"; ONLY_SEEN=1; shift ;;
+  --only=*) ONLY_RAW="${1#*=}"; ONLY_SEEN=1 ;;
+  --skip) [[ $# -ge 2 ]] || { echo "--skip requires module names, e.g. --skip tmux" >&2; exit 1; }; SKIP_RAW="$2"; SKIP_SEEN=1; shift ;;
+  --skip=*) SKIP_RAW="${1#*=}"; SKIP_SEEN=1 ;;
+  -h | --help) sed -n '2,14p' "$0"; exit 0 ;;
+  *) echo "unknown arg: $1" >&2; exit 1 ;;
+esac; shift; done
 
 # ── core/ subtree present? (inline: can't source a lib out of core/ before this) ─
 # Validate the SPECIFIC paths we depend on (zsh modules + the two libs sourced
@@ -40,6 +52,11 @@ unset _req
 source "$DOTFILES/core/lib/ux.sh"
 # shellcheck source=core/lib/bootstrap-lib.sh
 source "$DOTFILES/core/lib/bootstrap-lib.sh"
+
+# Apply any --only/--skip module selection now the validator (blib_select) exists;
+# it aborts on a malformed selector or an unknown group.
+if ((ONLY_SEEN)); then blib_select --only "$ONLY_RAW"; fi
+if ((SKIP_SEEN)); then blib_select --skip "$SKIP_RAW"; fi
 
 # ── sanity: confirm this is Kali ──────────────────────────────────────────────
 if ! grep -qE '^ID=kali' /etc/os-release 2>/dev/null; then
@@ -152,10 +169,11 @@ wire_links() {
   # the entry loader only at $HOME, a fresh login window keys its new-user check off
   # the (absent) $ZDOTDIR/.zshrc and fires zsh-newuser-install before our rc loads.
   # Mirror the entry into ZDOTDIR so both lookup paths resolve to the same loader.
-  blib_link "$HOME/.zshrc" "$CONFIG/zsh/.zshrc"
+  # Part of the zsh group — skip it when zsh isn't being wired (--only/--skip).
+  if blib_want zsh; then blib_link "$HOME/.zshrc" "$CONFIG/zsh/.zshrc"; fi
 
   blib_set_login_shell
-  blib_ok "symlinks wired"
+  blib_ok "symlinks wired$(blib_selected_note)"
 }
 
 ((LINKS_ONLY)) || provision
