@@ -13,7 +13,7 @@
 #   {{password}}=$PASS  {{hostname}}=$HOSTNAME_T  {{nthash}}=$NTHASH
 #   {{port}}=$PORT  {{share}}=$SHARE
 # Deps: fzf (required); bat (nicer preview, falls back to cat); clip (Core helper,
-# falls back to stdout). Frontmatter is parsed with sed — no yq needed.
+# falls back to stdout). Frontmatter is parsed with awk — no yq needed.
 # ──────────────────────────────────────────────────────────────────────────────
 set -euo pipefail
 # bash 5.2's patsub_replacement makes a literal `&` in a ${var//pat/repl} replacement

@@ -71,6 +71,11 @@ alias hethttp='echo "serving $(pwd) on :8000"; python3 -m http.server 8000'
 # The IppSec method — workflow habits + signature moves (the altitude above the
 # command refs: the recon loop, shell stabilization, the scripted pseudo-shell).
 [[ -f "$HOME/ippsec" ]] && alias ipp='${EDITOR:-nvim} "$HOME/ippsec"'
+# The structured companion (the experimental sibling of the flat refs above):
+# fuzzy-pick an attack, preview it beside its paired blue detection, fill the
+# {{slots}} from $RHOST/$LHOST/... and copy. A function so args pass through and
+# $0 stays the real script path (htpx re-execs itself for the fzf preview).
+[[ -x "$HOME/companion/htpx" ]] && htpx() { "$HOME/companion/htpx" "$@"; }
 
 # ── nmap: a sane default sweep that writes all-formats output into the cwd ────
 # Usage: nmapsweep <target/CIDR>   → ./nmap/<target>.{nmap,gnmap,xml}

@@ -44,13 +44,16 @@ Command templates normalize the corpus's `<angle-bracket>` placeholders to
 
 ```sh
 export RHOST=10.10.10.5 DOMAIN=corp.local USER_T=svc_sql PASS='…'
-./htpx          # pick an attack; preview shows it + its blue detection;
+htpx            # pick an attack; preview shows it + its blue detection;
                 # the command is slot-filled and copied via `clip`
 ```
 
-`htpx` needs `fzf`; `bat` (preview) and `clip` (Core clipboard) are used if
-present, else it falls back to `cat`/stdout. No `yq` dependency — the flat
-frontmatter is parsed with `sed`.
+`htpx` is on the shell as of bootstrap: `companion/` symlinks to `~/companion`
+and `offensive.zsh` defines an `htpx` function. From a checkout you can also run
+`./htpx` directly. It needs `fzf`; `bat` (preview) and `clip` (Core clipboard)
+are used if present, else it falls back to `cat`/stdout. No `yq` dependency —
+`htpx` reads only the scalar top-level fields it needs (`title:`, `pair:`) from
+the frontmatter with `awk` (the nested `attack:` block is for humans/greppers).
 
 ## The differentiator
 
@@ -60,8 +63,10 @@ No mainstream tool ships attacks paired with the telemetry they trip.
 
 ## Scope of this MVP
 
-3 paired concepts (Kerberoast, DCSync) + 1 unpaired recon entry (SMB enum) —
-enough to prove the schema, the purple pivot, and slot-substitution end to end.
+4 paired concepts (Kerberoast ↔ `4769`, DCSync ↔ `4662`, AS-REP roasting ↔
+`4771`, pass-the-hash ↔ `4624`) + 1 unpaired recon entry (SMB enum) — enough to
+prove the schema, the purple pivot, and slot-substitution across multiple ATT&CK
+tactics (Credential Access, Lateral Movement, Discovery).
 
 ## Open decisions (before this graduates from MVP)
 

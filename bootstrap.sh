@@ -141,6 +141,9 @@ wire_links() {
   [[ -f "$DOTFILES/offensive/exploitdev" ]] && blib_link "$DOTFILES/offensive/exploitdev" "$HOME/exploitdev"
   [[ -f "$DOTFILES/offensive/evasion" ]] && blib_link "$DOTFILES/offensive/evasion" "$HOME/evasion"
   [[ -f "$DOTFILES/offensive/ippsec" ]] && blib_link "$DOTFILES/offensive/ippsec" "$HOME/ippsec"
+  # The structured red<->blue companion (the `htpx` browser + its entries/ tree).
+  # Linked as a directory so htpx resolves entries/ relative to itself; run via `htpx`.
+  [[ -d "$DOTFILES/offensive/companion" ]] && blib_link "$DOTFILES/offensive/companion" "$HOME/companion"
 
   # The managed .zshrc loader — Kali adds the `offensive` stage just before `local`.
   blib_write_zshrc_loader tools ui options history aliases git functions fzf bindings plugins op maint update os offensive local
