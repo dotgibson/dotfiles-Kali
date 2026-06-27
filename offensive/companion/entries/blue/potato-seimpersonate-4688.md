@@ -11,14 +11,15 @@ pair: potato-seimpersonate
 ---
 
 Detection posture: **moderate** — the impersonation itself is a legitimate API,
-but the *outcome* is anomalous: a service identity (app-pool / `*$` / NETWORK|LOCAL
-SERVICE) spawning an interactive shell, which then runs as SYSTEM. The cleaner
-signal is endpoint telemetry — Sysmon 17/18 on the `spoolss`/DCOM named pipe, plus
-Sysmon 1 showing the SYSTEM child — but the `4688` service-account-to-shell shape
-catches the obvious cases. Tune the service-account list to your environment.
+and `4688` alone can't show the new process's run-as-SYSTEM result. So this query
+flags the *shape* it can see — a service identity (app-pool / `*$` / NETWORK|LOCAL
+SERVICE) spawning an interactive shell — and you confirm the SYSTEM outcome with
+endpoint telemetry: Sysmon 17/18 on the `spoolss`/DCOM named pipe, plus Sysmon 1
+correlating the parent service process to a SYSTEM child. Tune the service-account
+list to your environment.
 
 ```spl
 index=main EventCode=4688 New_Process_Name IN ("*\\cmd.exe","*\\powershell.exe")
-| search Creator_Subject_Account_Name IN ("*$","*APPPOOL*","NETWORK SERVICE","LOCAL SERVICE")
-| table _time, host, Creator_Subject_Account_Name, New_Process_Name, Token_Elevation_Type
+    Account_Name IN ("*$","*APPPOOL*","NETWORK SERVICE","LOCAL SERVICE")
+| table _time, host, Account_Name, Creator_Process_Name, New_Process_Name, Process_Command_Line
 ```
