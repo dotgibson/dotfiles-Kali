@@ -19,11 +19,13 @@ on:
     paths:
       - 'offensive/companion/**'
       - 'PURPLE-TEAM.md'
+      - 'offensive/hacktheplanet'
       - '.github/workflows/companion.yml'
   pull_request:
     paths:
       - 'offensive/companion/**'
       - 'PURPLE-TEAM.md'
+      - 'offensive/hacktheplanet'
       - '.github/workflows/companion.yml'
   workflow_dispatch:
 

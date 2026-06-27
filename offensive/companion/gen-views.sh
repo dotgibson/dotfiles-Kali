@@ -8,11 +8,16 @@
 # schema. Where the two OVERLAP, this script makes the entry win: it regenerates
 # the marked blocks in the flat file FROM the entry, so the overlap can't drift.
 #
-# A flat file opts a block in with a marker pair naming the entry id:
+# A flat file opts a block in with a marker pair naming the entry id, in the host
+# file's comment style — HTML for markdown, `#` for the shell-style hacktheplanet:
 #
-#     <!-- companion:gen kerberoasting-4769 -->
-#     …everything here is generated from entries/**/kerberoasting-4769.md…
+#     <!-- companion:gen kerberoasting-4769 -->   (PURPLE-TEAM.md, a blue detection)
+#     …generated from entries/blue/kerberoasting-4769.md…
 #     <!-- companion:end kerberoasting-4769 -->
+#
+#     # companion:gen kerberoast-getuserspns      (hacktheplanet, a red attack)
+#     …generated from entries/red/kerberoast-getuserspns.md…
+#     # companion:end kerberoast-getuserspns
 #
 # Anything OUTSIDE the markers is hand-authored and never touched.
 #
@@ -20,9 +25,10 @@
 #   gen-views.sh --check    # exit 1 (with a diff) if any block is out of date
 #
 # --check is the drift gate (CI runs it); the bare form is what you run after
-# editing an entry. Markdown markers only for now (PURPLE-TEAM.md); the red-side
-# hacktheplanet retrofit needs a {{slot}} -> <angle-bracket> reverse map and is a
-# deliberate follow-up.
+# editing an entry. The render shape is keyed off the entry's colour: a BLUE entry
+# renders as `**title**` + prose + a fenced ```spl detection; a RED entry renders
+# as its raw command lines with the `{{slot}}` placeholders reverse-mapped to
+# hacktheplanet's `<angle-bracket>` house style (see SLOT_TO_ANGLE).
 # ──────────────────────────────────────────────────────────────────────────────
 set -euo pipefail
 
@@ -31,10 +37,28 @@ ENTRIES="$HERE/entries"
 REPO="$(cd -- "$HERE/../.." && pwd)"
 
 # The flat files that carry generated blocks (paths relative to the repo root).
-TARGETS=("PURPLE-TEAM.md")
+# PURPLE-TEAM.md takes blue detections (HTML markers); hacktheplanet takes red
+# attacks (`#` markers).
+TARGETS=("PURPLE-TEAM.md" "offensive/hacktheplanet")
 
 CHECK=0
 [[ "${1:-}" == "--check" ]] && CHECK=1
+
+# Reverse of the normalization the corpus applies: the entries store target params
+# as {{slots}}; hacktheplanet's house style is <angle-bracket> tokens. This sed
+# program (ERE) maps every slot back to the exact token that file already uses, so
+# a generated red block is byte-identical to the hand-written command it replaces.
+SLOT_TO_ANGLE='
+  s/\{\{rhost\}\}/<ip_address>/g
+  s/\{\{lhost\}\}/<lhost>/g
+  s/\{\{domain\}\}/<domain>/g
+  s/\{\{user\}\}/<user>/g
+  s/\{\{password\}\}/<password>/g
+  s/\{\{hostname\}\}/<hostname>/g
+  s/\{\{nthash\}\}/<NThash>/g
+  s/\{\{port\}\}/<port>/g
+  s/\{\{share\}\}/<share>/g
+'
 
 # entry_for_id <id> — print the path of the ONE entry whose frontmatter id == <id>.
 # Fails (non-zero, with a clear message naming the paths) on zero or multiple
@@ -54,13 +78,13 @@ entry_for_id() {
   printf '%s\n' "$matches"
 }
 
-# render_block <entry-file> — the markdown block a flat file should show for it:
-# the bold title, the body prose, the fenced detection, then any trailing note
-# (e.g. a "Tighter:" follow-up after the query). One awk pass; reads only the first
-# frontmatter block for the title and treats the FIRST fenced block as the query,
-# so a stray ``` or key: in the body can't confuse it. Content before the fence is
-# prose, content after it is the tail.
-render_block() {
+# render_blue <entry-file> — the markdown block PURPLE-TEAM.md shows for a blue
+# detection: the bold title, the body prose, the fenced detection, then any
+# trailing note (e.g. a "Tighter:" follow-up after the query). One awk pass; reads
+# only the first frontmatter block for the title and treats the FIRST fenced block
+# as the query, so a stray ``` or key: in the body can't confuse it. Content before
+# the fence is prose, content after it is the tail.
+render_blue() {
   awk '
     /^---[[:space:]]*$/ { fm++; if (fm == 2) stage = 1; next }
     fm == 1 { if (index($0, "title:") == 1) { t = $0; sub(/^title:[[:space:]]*/, "", t) } next }
@@ -81,24 +105,52 @@ render_block() {
   ' "$1"
 }
 
+# render_red <entry-file> — what hacktheplanet shows for a red attack: just the raw
+# command lines (its house style is command-first, terse, no prose/fence), with the
+# entry's {{slot}} placeholders reverse-mapped to hacktheplanet's <angle-bracket>
+# vocabulary. The attack's surrounding `# comment:` header and any extra recon lines
+# stay hand-authored OUTSIDE the markers — the entry owns only its own commands.
+render_red() {
+  # extract the FIRST fenced block (the commands), then reverse-map the slots.
+  awk '/^```/ { c++; next } c == 1 { print }' "$1" | sed -E "$SLOT_TO_ANGLE"
+}
+
+# marker_id <kind> <line> — echo the id if <line> is a `companion:<kind>` marker in
+# EITHER comment style (HTML `<!-- … -->` or shell `# …`), else return non-zero.
+# kind is gen|end. Keeps build_file agnostic to the host file's comment syntax.
+marker_id() {
+  local kind="$1" line="$2"
+  if [[ "$line" =~ ^\<!--\ companion:$kind\ ([a-z0-9-]+)\ --\>$ ]]; then printf '%s' "${BASH_REMATCH[1]}"; return 0; fi
+  if [[ "$line" =~ ^#\ companion:$kind\ ([a-z0-9-]+)$ ]]; then printf '%s' "${BASH_REMATCH[1]}"; return 0; fi
+  return 1
+}
+
+# render_for <entry-file> — dispatch on the entry's colour (which dir it lives in).
+render_for() {
+  case "$1" in
+    */entries/red/*) render_red "$1" ;;
+    */entries/blue/*) render_blue "$1" ;;
+    *) echo "gen-views: cannot tell colour (red/blue) of entry $1" >&2; return 2 ;;
+  esac
+}
+
 # build_file <flat-file> — emit the file with every marked block regenerated.
 build_file() {
   local file="$1" line id ef
   while IFS= read -r line || [[ -n "$line" ]]; do
-    if [[ "$line" =~ ^\<!--\ companion:gen\ ([a-z0-9-]+)\ --\>$ ]]; then
-      id="${BASH_REMATCH[1]}"
-      printf '%s\n' "$line"                       # keep the opening marker
+    if id="$(marker_id gen "$line")"; then
+      printf '%s\n' "$line"                       # keep the opening marker verbatim
       # Conditional call so entry_for_id's failure surfaces under `set -e`; it has
       # already printed the specific reason (missing / duplicate id).
       if ! ef="$(entry_for_id "$id")"; then
         echo "gen-views: ^ referenced by a companion:gen marker in $file" >&2; return 2
       fi
-      render_block "$ef"
+      render_for "$ef" || return 2
       # consume the old block up to and including its end marker
-      local found=0 l2
+      local found=0 l2 endid
       while IFS= read -r l2; do
-        if [[ "$l2" =~ ^\<!--\ companion:end\ ([a-z0-9-]+)\ --\>$ ]]; then
-          [[ "${BASH_REMATCH[1]}" == "$id" ]] || { echo "gen-views: marker mismatch: gen '$id' closed by end '${BASH_REMATCH[1]}' in $file" >&2; return 2; }
+        if endid="$(marker_id end "$l2")"; then
+          [[ "$endid" == "$id" ]] || { echo "gen-views: marker mismatch: gen '$id' closed by end '$endid' in $file" >&2; return 2; }
           printf '%s\n' "$l2"; found=1; break
         fi
       done
@@ -113,7 +165,7 @@ rc=0
 for t in "${TARGETS[@]}"; do
   file="$REPO/$t"
   [[ -f "$file" ]] || { echo "gen-views: target not found: $t" >&2; rc=1; continue; }
-  if ! grep -q '<!-- companion:gen ' "$file"; then
+  if ! grep -qE '^(<!-- |# )companion:gen ' "$file"; then
     echo "gen-views: $t has no companion:gen markers — skipping" >&2
     continue
   fi

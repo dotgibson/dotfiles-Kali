@@ -83,7 +83,8 @@ prose or bloat the schema into freeform markdown. So:
 - **The flat files stay canonical for everything else** — the prose the schema
   can't hold.
 - **Where they overlap, the entry wins via generation.** A flat file opts a block
-  in with `<!-- companion:gen ID -->` … `<!-- companion:end ID -->` markers;
+  in with `companion:gen ID` … `companion:end ID` markers — HTML comments in
+  markdown (`PURPLE-TEAM.md`), `#` comments in the shell-style `hacktheplanet`.
   `gen-views.sh` regenerates the marked blocks from the entry, and
   `gen-views.sh --check` (run in CI, `.github/workflows/companion.yml`) fails on
   drift. Content outside the markers is never touched.
@@ -91,10 +92,17 @@ prose or bloat the schema into freeform markdown. So:
 This kills drift on the overlap *without* a 60-entry migration and *without*
 giving up the rich prose. Workflow: edit the entry → `gen-views.sh` → commit both.
 
-`PURPLE-TEAM.md` is wired up first (4 detections; its SPL has no target slots, so
-no placeholder translation). The **red-side `hacktheplanet` retrofit is a
-deliberate follow-up** — it needs a `{{slot}}` → `<angle-bracket>` reverse map to
-match that file's house style.
+**Both sides are wired.** The render shape keys off the entry's colour:
+
+- **Blue** (`PURPLE-TEAM.md`) — `**title**` + prose + a fenced ```spl detection.
+  Its SPL has no target slots, so no placeholder translation.
+- **Red** (`hacktheplanet`) — just the raw command lines in that file's terse,
+  command-first house style, with the entry's `{{slots}}` reverse-mapped to its
+  `<angle-bracket>` vocabulary (`{{rhost}}`→`<ip_address>`, `{{nthash}}`→`<NThash>`,
+  …; see `SLOT_TO_ANGLE` in `gen-views.sh`). Only attacks whose commands are
+  contiguous and map cleanly are marked (Kerberoast, AS-REP, DCSync); ones whose
+  lines are scattered across folds or carry inline notes (SMB enum, pass-the-hash)
+  stay hand-authored — the entry owns only what it cleanly owns.
 
 ## Open decisions (before this graduates from MVP)
 
