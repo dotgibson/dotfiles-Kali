@@ -19,5 +19,6 @@ auditing on DCs.
 
 ```spl
 index=main EventCode=5145 Relative_Target_Name="protected_storage"
-| table _time, host, Account_Name, Source_Address, Relative_Target_Name
+| regex Share_Name="(?i).*ipc\$$"
+| table _time, host, Account_Name, Source_Address, Share_Name, Relative_Target_Name
 ```

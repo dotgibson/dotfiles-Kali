@@ -20,6 +20,6 @@ inventory `TRUSTED_FOR_DELEGATION` accounts that shouldn't have it.
 ```spl
 index=main EventCode=4624 Logon_Type=3 Account_Name="*$"
 | search Account_Name IN ("DC1$","DC2$")
-| where NOT (ComputerName IN ("DC1","DC2"))
-| table _time, ComputerName, Account_Name, Source_Network_Address
+| where NOT (host IN ("DC1","DC2"))
+| table _time, host, Account_Name, Source_Network_Address
 ```
