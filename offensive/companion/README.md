@@ -65,7 +65,7 @@ No mainstream tool ships attacks paired with the telemetry they trip.
 
 ## Corpus
 
-12 paired concepts + 1 unpaired recon entry (SMB enum), spanning Credential
+14 paired concepts + 1 unpaired recon entry (SMB enum), spanning Credential
 Access, Privilege Escalation, Lateral Movement, and Discovery:
 
 | Attack (red) | Detection (blue) | ATT&CK |
@@ -82,6 +82,8 @@ Access, Privilege Escalation, Lateral Movement, and Discovery:
 | RDP session hijack (tscon) | `4688` tscon `/dest:rdp-tcp#` | T1563.002 |
 | Shadow Credentials (certipy) | `5136` msDS-KeyCredentialLink write | T1556 |
 | RBCD (impacket) | `5136` msDS-AllowedToActOnBehalfOfOtherIdentity write | T1098 |
+| Unconstrained delegation → DC TGT | `4624` DC machine-acct → non-DC _(soft)_ | T1558 |
+| DPAPI domain backup key | `5145` protected_storage pipe | T1555 |
 
 Growth is mechanical now that the drift gate exists: author the red+blue entry
 pair, mark the matching flat blocks, then `gen-views.sh`. The blue detection
