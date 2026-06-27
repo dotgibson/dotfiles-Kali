@@ -36,8 +36,23 @@ TARGETS=("PURPLE-TEAM.md")
 CHECK=0
 [[ "${1:-}" == "--check" ]] && CHECK=1
 
-# entry_for_id <id> — path of the entry whose frontmatter id == <id>, or empty.
-entry_for_id() { grep -rl "^id:[[:space:]]*$1\$" "$ENTRIES" 2>/dev/null | head -n1; }
+# entry_for_id <id> — print the path of the ONE entry whose frontmatter id == <id>.
+# Fails (non-zero, with a clear message naming the paths) on zero or multiple
+# matches, so a typo or a duplicate id can never silently regenerate the wrong
+# block. Callers must invoke it in a conditional (`if ! ef=$(entry_for_id …)`) so
+# the failure is visible under `set -e` (a bare `ef=$(…)` assignment swallows it).
+entry_for_id() {
+  local id="$1" matches n
+  matches="$(grep -rl "^id:[[:space:]]*$id\$" "$ENTRIES" 2>/dev/null || true)"
+  n="$(printf '%s' "$matches" | grep -c . || true)"
+  if [[ "$n" -eq 0 ]]; then
+    echo "gen-views: no entry with id '$id'" >&2; return 1
+  elif [[ "$n" -gt 1 ]]; then
+    echo "gen-views: duplicate id '$id' across multiple entries:" >&2
+    printf '%s\n' "$matches" | sed 's/^/  /' >&2; return 1
+  fi
+  printf '%s\n' "$matches"
+}
 
 # render_block <entry-file> — the markdown block a flat file should show for it:
 # the bold title, the body prose, the fenced detection, then any trailing note
@@ -73,8 +88,11 @@ build_file() {
     if [[ "$line" =~ ^\<!--\ companion:gen\ ([a-z0-9-]+)\ --\>$ ]]; then
       id="${BASH_REMATCH[1]}"
       printf '%s\n' "$line"                       # keep the opening marker
-      ef="$(entry_for_id "$id")"
-      [[ -n "$ef" ]] || { echo "gen-views: no entry with id '$id' (referenced in $file)" >&2; return 2; }
+      # Conditional call so entry_for_id's failure surfaces under `set -e`; it has
+      # already printed the specific reason (missing / duplicate id).
+      if ! ef="$(entry_for_id "$id")"; then
+        echo "gen-views: ^ referenced by a companion:gen marker in $file" >&2; return 2
+      fi
       render_block "$ef"
       # consume the old block up to and including its end marker
       local found=0 l2

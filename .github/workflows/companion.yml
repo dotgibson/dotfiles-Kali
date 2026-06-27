@@ -42,8 +42,9 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: shellcheck the generator
-        run: shellcheck -S warning offensive/companion/gen-views.sh
-
+      # No shellcheck step here on purpose: gen-views.sh is repo-owned *.sh, so the
+      # lint workflow already shellchecks it with the PINNED shellcheck from
+      # core/scripts/tool-versions.env. Duplicating it with the runner's unpinned
+      # shellcheck would only invite drift — this job just runs the drift gate.
       - name: assert generated views are in sync with their entries
         run: ./offensive/companion/gen-views.sh --check
