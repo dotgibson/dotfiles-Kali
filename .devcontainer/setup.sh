@@ -15,20 +15,30 @@ apt-get update -qq
 # Critical for the shell to come up at all — fail loudly if these don't install.
 apt-get install -y --no-install-recommends \
   zsh git tmux curl ca-certificates less
-# Nice-to-have CLIs that Core's aliases light up when present — best-effort, since
-# Core degrades gracefully for anything missing. (Debian/Kali rename bat->batcat and
-# fd-find->fdfind; Core's tools.zsh already resolves both, so no aliasing needed here.)
-apt-get install -y --no-install-recommends \
-  fzf ripgrep bat fd-find eza neovim jq 2>/dev/null || true
+# Nice-to-have CLIs that Core's aliases light up when present — best-effort, since Core
+# degrades gracefully for anything missing. stderr stays VISIBLE (an apt lock / repo error
+# should be diagnosable in a broken Codespace), with a concise note if the set can't be
+# installed. (Debian/Kali rename bat->batcat, fd-find->fdfind; Core's tools.zsh resolves both.)
+apt-get install -y --no-install-recommends fzf ripgrep bat fd-find eza neovim jq ||
+  echo "   note: some optional CLIs were unavailable — the shell still works (Core skips missing tools)"
 
-echo "==> starship prompt"
-curl -fsSL https://starship.rs/install.sh | sh -s -- -y >/dev/null 2>&1 ||
-  echo "   starship install skipped (offline?) — the shell still works without the prompt"
+echo "==> starship prompt (distro package)"
+# From apt, NOT a piped remote installer (no `curl | sh`): Kali/Debian ship starship. If
+# it's absent here the prompt just falls back to plain zsh; the full `./bootstrap.sh` uses
+# the upstream installer. Kept on its own line so its absence can't sink the CLIs above.
+apt-get install -y --no-install-recommends starship ||
+  echo "   note: starship unavailable via apt here — prompt falls back to plain zsh"
 
 echo "==> wiring dotfiles (Core + offensive role layer, no package install)"
-# --links-only skips provision() entirely (no apt, no heavy offensive stack) but runs
-# wire_links: Core via blib_link_core, the offensive symlinks (hacktheplanet/exploitdev/
-# evasion/ippsec + offensive.zsh), the offensive loader stage, and chsh to zsh.
+# BLIB_SU= : run the privilege steps (chsh + appending /etc/shells) directly as root. This
+# container runs as root and has no sudo, but blib_set_login_shell defaults BLIB_SU=sudo —
+# which would fail with "sudo: command not found" and (under set -e) abort the wiring. This
+# is the same setting the reusable bootstrap-test workflow passes (-e BLIB_SU=) to its
+# distro containers.
+export BLIB_SU=
+# --links-only skips provision() (no apt, no heavy offensive stack) but runs wire_links:
+# Core via blib_link_core, the offensive symlinks (hacktheplanet/exploitdev/evasion/ippsec
+# + offensive.zsh), the offensive loader stage, and chsh to zsh.
 ./bootstrap.sh --links-only
 
 cat <<'EOF'
