@@ -11,7 +11,7 @@ pair: device-code-phish
 ---
 
 Device-code is a rare auth flow for normal interactive users, so the invariant is
-the flow itself: filter Entra sign-in logs for `authenticationProtocol == deviceCode`,
+the flow itself: filter Entra sign-in logs for `AuthenticationProtocol == "deviceCode"`,
 then triage by user / IP / location / app. A device-code sign-in from a geo or IP
 that doesn't match the user — or for a user who never uses it — is the tell.
 
@@ -22,5 +22,5 @@ Splunk and deliberately doesn't carry cloud detections.
 ```kql
 SigninLogs
 | where AuthenticationProtocol == "deviceCode"
-| project TimeGenerated, UserPrincipalName, IPAddress, AppDisplayName, Location, ResultType
+| project TimeGenerated, UserPrincipalName, IPAddress, AppDisplayName, LocationDetails, ResultType
 ```

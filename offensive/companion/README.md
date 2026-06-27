@@ -88,8 +88,9 @@ Access, Privilege Escalation, Lateral Movement, and Discovery:
 | Device-code phishing (Entra) | Entra sign-in `deviceCode` flow _(KQL, cloud)_ | T1528 |
 
 Growth is mechanical now that the drift gate exists: author the red+blue entry
-pair, mark the matching flat blocks, then `gen-views.sh`. The blue detection
-always generates into `PURPLE-TEAM.md`. The red side generates into
+pair, mark the matching flat blocks, then `gen-views.sh`. For **on-prem** pairs the
+blue detection generates into `PURPLE-TEAM.md` (cloud pairs are companion-only —
+see below). The red side generates into
 `hacktheplanet` whenever its commands are slot-mappable (even multi-step — see
 RBCD); only commands that carry inline comments or are scattered across existing
 folds stay hand-authored. Either way the entry powers `htpx` and the paired
