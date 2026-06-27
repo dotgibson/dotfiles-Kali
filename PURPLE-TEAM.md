@@ -155,13 +155,21 @@ index=main EventCode=4624 Logon_Type=3 NOT (Source_Network_Address IN ("-","::1"
 ```
 <!-- companion:end lateral-4624-fanout -->
 
-**LSASS access (credential theft)** — `4656` handle to lsass with dump-shaped masks:
+<!-- companion:gen lsass-4656 -->
+**Detect LSASS access (4656 dump-shaped handle)**
+
+Credential theft from memory needs a handle to `lsass` with read/dump access
+rights — `4656` with a dump-shaped access mask, from any process that isn't the
+AV engine, is the signal. Endpoint telemetry (Sysmon 10 process-access) sees this
+better than the Security log, but the mask filter catches the obvious cases.
+
 ```spl
 index=main EventCode=4656 Object_Name=*lsass* TaskCategory="Kernel Object"
     Process_Name!=*MsMpEng.exe
     (Access_Mask="0x1010" OR Access_Mask="0x1410" OR Access_Mask="0x1FFFFF")
 | table _time, host, Account_Name, Process_Name, Access_Mask, Object_Name
 ```
+<!-- companion:end lsass-4656 -->
 
 **Remote secrets dump (svcctl/winreg over IPC$/ADMIN$)** — `5145`:
 ```spl
@@ -210,11 +218,19 @@ index=main EventCode=7045 Service_Name!="MpKsl*"
 | table _time, host, Service_Name, Service_File_Name, Service_Account
 ```
 
-**RDP session hijack** — `4688` with the `tscon /dest:rdp-tcp#` tell:
+<!-- companion:gen rdp-hijack-4688 -->
+**Detect RDP session hijack (4688 tscon)**
+
+The hijack can't happen without a `tscon ... /dest:rdp-tcp#` command line, so the
+process-creation event (`4688`) carrying that argument is a near-zero-false-
+positive tell — legitimate admins almost never `tscon` to a different session's
+RDP endpoint by hand.
+
 ```spl
 index=main EventCode=4688
 | regex Process_Command_Line="(?i)/dest:rdp-tcp#"
 ```
+<!-- companion:end rdp-hijack-4688 -->
 
 **Rogue account creation** — `4720` (created), pair with `4722` (enabled):
 ```spl
