@@ -1,46 +1,74 @@
-# CLAUDE.md — dotfiles-Kali
+# CLAUDE.md — dotfiles-core
 
-Project memory for Claude Code, auto-loaded every session. For the shared Core
-rules (the load order, the "is it Core?" test, the manifest contract) see
-`core/README.md` and `core/CONTRIBUTING.md`.
+Project memory for Claude Code. This file is auto-loaded every session, so it is
+the shared context that keeps every routine (and every ad-hoc edit) reasoning
+from the system's real rules instead of guessing. Keep it short and true; when a
+rule here drifts from `README.md` / `CONTRIBUTING.md`, those win — fix this.
 
 ## What this repo is
 
-`dotfiles-Kali` is the **Role layer** of a **nine-repo dotfiles system** built on
-a three-layer model (Core → OS-native → Role): the OS-native layer for Kali
-(Debian-family, `apt`, run under WSL2) **plus** an offensive engagement layer on
-top. It is its own lineage — built directly, not stamped from the Fedora template.
+`dotfiles-core` is the **single source of truth** for the Core layer of a
+**nine-repo dotfiles system** built on a three-layer model. Core is authored
+**once here** and vendored into each OS repo's `core/` via `git subtree` — so a
+defect here fans out N-way. Treat every change as if it ships to all of them,
+because it does.
 
-## The rule that bites
+| Layer         | Lives in                                                               | Examples                                     |
+| ------------- | ---------------------------------------------------------------------- | -------------------------------------------- |
+| **Core**      | **this repo**, vendored into each OS repo's `core/`                    | zsh modules, tmux, nvim, git, starship       |
+| **OS-native** | `dotfiles-{MacBook,Windows,Fedora,Arch,openSUSE,Alpine,Gentoo}`        | package manager, clipboard, paths            |
+| **Role**      | `dotfiles-Kali`                                                        | offensive/engagement tooling on the OS layer |
 
-`core/` is a **vendored `git subtree` copy of [dotfiles-core](https://github.com/Gerrrt/dotfiles-core)** — *not*
-editable here; changes under `core/` are overwritten on the next sync. Edit shared
-Core config **in dotfiles-core**, `make audit`, then `make sync`.
+Plus `dotfiles-web` — the public Astro showcase/docs site (the system's public
+face, **not** a config layer). The canonical Core-vendoring fleet is
+`scripts/os-repos.txt`; `dotfiles-Windows` is a machine repo but vendors no
+`core/` (its host config is replicated from scratch in PowerShell, not ported).
 
-Three things that actually bite on this repo:
+## The rules that bite
 
-- The zsh loader adds an **`offensive` stage** (`… os offensive local`) on top of
-  the Core order — keep offensive config in that layer, not in `core/`.
-- **Debian renames binaries** — `bat`→`batcat`, `fd-find`→`fdfind`. Core's
-  `tools.zsh` already resolves both; don't "fix" aliases for it.
-- **WSL2 is NAT'd** — a listener/reverse shell isn't LAN-reachable until mirrored
-  networking is enabled in the *Windows-side* `%UserProfile%\.wslconfig`
-  (`networkingMode=mirrored`), **not** `/etc/wsl.conf`.
+- **Is it Core?** It belongs here **only** if it is identical on every machine
+  **and** not OS-specific **and** not offensive. Changes with the OS → the OS
+  repo. Changes with the operator → `dotfiles-Kali`. (See `CONTRIBUTING.md`.)
+- **The manifest is the contract.** `core.manifest` is the canonical inventory.
+  Adding a Core file means adding its path to `core.manifest` in the same change;
+  `scripts/audit-core.sh` enforces this both directions. Repo-meta and dev tooling
+  (docs, `.github/`, `.claude/`, `scripts/`) live in the audit's allowlist instead.
+- **Never edit vendored `core/` in an OS repo.** That tree is a copy of this repo
+  and is overwritten on the next sync. Fix it **here**, then fan out.
+- **Load order is load-bearing.** `tools → ui → options → history → aliases → git
+  → functions → fzf → bindings → plugins → op → maint → update → os → local`
+  (the canonical order in `core.manifest`). Don't reorder casually.
+- **Exec bits are asserted.** `bin/`, `scripts/`, `tmux/scripts/`, `maint/` runners
+  are `+x`; the sourced `zsh/*.zsh` modules must stay non-executable.
+- **A user-visible change lands in `CHANGELOG.md` under `[Unreleased]`** in the
+  same commit, with a [Conventional Commits](https://www.conventionalcommits.org/)
+  message (`type(scope): summary`).
 
-Keep all engagement data in `~/engagements` (outside the repo); the repo ships a
-paranoid `.gitignore` as backup.
+## The one gate
 
-## Where things are
+`scripts/audit-core.sh` is the single definition of "Core is healthy" (manifest
+drift, exec-bits, syntax, shellcheck, luacheck, markdownlint, behavioral suite).
+CI, pre-commit, and `make audit` all call it. **Green it before you push** — a red
+tree must never be vendored out.
 
-- `offensive/` — engagement scaffolding (the role layer)
-- `offensive/hacktheplanet` — CTF/HTB/engagement command cheatsheet (field reference under `OFFENSIVE-METHODOLOGY.md`); folds by section in vim, symlinked to `~/hacktheplanet`, opened with `htp`
-- `offensive/exploitdev` — binary-exploitation companion (stack/SEH overflows, egghunters, shellcode, DEP/ASLR, PE backdooring, plus a vulnserver command→bug→technique map as the practice target); same vim-fold UX, symlinked to `~/exploitdev`, opened with `xdev`
-- `offensive/evasion` — defense-evasion companion (AV/AMSI/AppLocker bypass, client-side macro access, process injection, egress/C2, advanced AD); symlinked to `~/evasion`, opened with `evade`
-- `offensive/ippsec` — **the method**: workflow habits + signature moves from IppSec's HTB catalog (the "always be running recon" loop, shell stabilization, the scripted `cmd.Cmd` pseudo-shell, the unsticking playbook) — the altitude *above* the command refs; same vim-fold UX, symlinked to `~/ippsec`, opened with `ipp`. Reusable pseudo-shell starting point: `offensive/templates/pseudo-shell.py`. Helpers in `offensive.zsh`: `ttyup`, `note`, `lhost`, `cde`, `rocks`
-- `PURPLE-TEAM.md` — defensive mirror of `hacktheplanet`: Splunk/Sentinel detections + Windows event-ID reference per attack (from TrustedSec's Actionable Purple Teaming, BH USA 2023)
-- `offensive/companion` — **experimental** structured/ATT&CK-tagged restructuring of the corpus into machine-readable `entries/red|blue/*.md` (YAML frontmatter + command template), each red attack `pair:`-linked to its blue detection. Browsed with `htpx` (fzf: pick → preview attack beside its detection → fill `{{slots}}` from `$RHOST/$LHOST/...` → `clip`); dir symlinked to `~/companion`. Purely additive — `hacktheplanet`/`PURPLE-TEAM.md` stay canonical until the source-of-truth question in `companion/README.md` is settled
-- `install/offensive-packages.txt` — offensive tooling; `install/packages.txt` — base
-- `os/kali.zsh`, `os/kali.conf`, `os/kali.gitconfig` — OS overlays
-- `OFFENSIVE-METHODOLOGY.md` — the engagement playbook
-- `bootstrap.sh` — symlinks Core + OS + offensive files into place
-- `core/` — vendored Core (read-only here; edit upstream in dotfiles-core)
+```bash
+make audit          # the full gate
+make audit-changed  # only what your diff touches (fast loop)
+make sync           # fan Core out to every OS repo (after a green audit)
+```
+
+Run `make` with no target for the discoverable list of entry points.
+
+## Maintenance routines (`.claude/`)
+
+On-demand routines that automate the judgment-heavy chores `audit-core.sh` can't:
+
+- `/doc-audit` — cross-check prose against reality across the fleet (docs ↔
+  manifest ↔ code ↔ each OS repo). Delegates to the `doc-consistency` subagent.
+- `/tool-scout` — research the modern-CLI stack for newer/better tools and major
+  features worth adopting. Delegates to the `tool-scout` subagent.
+- `/freshness-triage` — review open dependency-bump PRs (zsh plugins, nvim lock,
+  actions) against upstream changelogs and flag breaking changes.
+
+Each routine **reports first** and only proposes changes; nothing is vendored out
+without a green `make audit`.

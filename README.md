@@ -1,217 +1,195 @@
-# dotfiles-Kali
+# dotfiles-core
 
-The Kali node of the dotfiles system. Unlike every other OS repo, this one
-stacks **three** layers instead of two:
+**Single source of truth for the Core layer** shared across every machine repo.
+This is the keystone of a nine-repo dotfiles system. It holds the config that is
+identical everywhere — shell modules, tmux base, Neovim, git — and nothing that
+is OS-specific or offensive.
 
-| Layer | Source | What it carries |
-|-------|--------|-----------------|
-| **Core** | vendored from `dotfiles-core` under `core/` | zsh modules, tmux, nvim, git, starship, mise, clip |
-| **OS-native** | `os/kali.*` | apt, clipboard delegation, paths, tmux/git tweaks (Kali is Debian-based) |
-| **Offensive (role)** | `offensive/` | engagement scaffolding + workspace workflow — **unique to this repo** |
-
-Built for **Kali on WSL2**.
-
-## The one rule that matters
-
-**This is a public showcase repo. Engagement and client data never live in it.**
-
-All engagement data lives under `~/engagements/` (outside the repo). The repo
-ships only tooling, config, and empty workspace scaffolding. The paranoid
-`.gitignore` is defense-in-depth. Keep engagement data out of the repo.
-
-## Loader integration
-
-The offensive layer adds one stage to the zsh loader, slotted in just before
-local overrides:
-
-```
-tools → aliases → functions → fzf → bindings → plugins → op → os → offensive → local
-```
-
-`offensive/offensive.zsh` → `~/.config/zsh/offensive.zsh`. It holds workflow
-helpers (e.g. `mkengagement`, `eng`, `logshell`, `nmapsweep`, `bhce`) —
-no exploit code, no attack automation; just where your output goes.
-
-## WSL2: read before you run a listener
-
-WSL2 is NAT'd by default, so a reverse shell / handler / responder / file
-server started in Kali is **not reachable from your LAN** — traffic hits the
-Windows host, not Kali. Fix it with **mirrored networking** (Windows 11 22H2+):
-copy `wsl/windows.wslconfig.example` to `%UserProfile%\.wslconfig`, then
-`wsl.exe --shutdown` and reopen. The distro-side `wsl/wsl.conf` (systemd +
-default user + interop) is installed automatically by `bootstrap.sh`.
-
-GUI tools (Burp, BloodHound UI) work under WSLg but are smoother on the Windows
-host — the default tool list is headless-first.
-
-## Install (fresh repo lifecycle)
-
-```sh
-# 1. land these files in ~/dotfiles-Kali, then:
-cd ~/dotfiles-Kali
-git init -b main
-git config user.name  "Your Name"
-git config user.email "you@example.com"
-git add . && git commit -m "Kali OS + offensive layers"
-
-# 2. vendor Core (one time)
-git subtree add --prefix=core <dotfiles-core remote> main --squash
-
-# 3. provision + wire
-./bootstrap.sh                 # full (add --no-offensive to skip heavy tools)
-
-# 4. apply WSL config
-wsl.exe --shutdown             # from a Windows terminal, then reopen Kali
-# (also drop windows.wslconfig.example at %UserProfile%\.wslconfig for mirrored net)
-```
-
-Keeping Core current later is the same as every repo: from `dotfiles-core`,
-`./bin/sync-core.sh dotfiles-Kali`, then `./bootstrap.sh --links-only` here.
-
-## bootstrap flags
-
-- `./bootstrap.sh` — apt base + offensive tools + symlinks
-- `./bootstrap.sh --no-offensive` — base + symlinks, skip the heavy tool install
-- `./bootstrap.sh --links-only` — just (re)create symlinks
-
-# The offensive layer (Kali specifics)
-
-> This section documents what makes `dotfiles-Kali` different from every other
-> repo in the system. Everything here is the **role layer** — it does not, and
-> must not, exist in Core. (If it changes when the *operating system* changes
-> it's OS-native; if it's identical everywhere it's Core; what's left — the
-> offensive tradecraft scaffolding — is this.)
-
-Kali is not stamped from the Fedora template. It's Debian-family (apt) and is
-the only repo that carries an **offensive stage** in the zsh loader. Where every
-other repo's `.zshrc` sources `… os local`, Kali inserts one more:
-
-```
-tools → aliases → functions → fzf → bindings → plugins → op → os → offensive → local
-```
-
-`offensive` loads after `os` (so OS paths/clipboard are already resolved) and
-before `local` (so a machine-specific override still wins).
+> If it changes when the _operating system_ changes, it does **not** belong here.
+> If it changes when _you as an operator_ change, it does **not** belong here.
+> Everything left over is Core, and it lives here.
 
 ---
 
-## What the layer ships
+## The three-layer model (unchanged, now centralized)
 
-| File | Role |
-|------|------|
-| `offensive/offensive.zsh` | sourced in the `offensive` stage — `HAVE_*` detection, tool ergonomics, engagement scaffolding |
-| `offensive/tmux/tmux-eng.sh` | `prefix + e` popup — fuzzy-jump to an engagement session (twin of Core's sessionizer) |
-| `offensive/hacktheplanet` | CTF/HTB/engagement command cheatsheet — copy-paste syntax per service/port (the field reference under the methodology map). Folds by section in vim; symlinked to `~/hacktheplanet`, opened with `htp` |
-| `offensive/ippsec` | **the method** — workflow habits + signature moves distilled from IppSec's HTB catalog (the recon loop, shell stabilization, the scripted pseudo-shell, the unsticking playbook). The altitude *above* the command refs. Same fold UX; symlinked to `~/ippsec`, opened with `ipp` |
-| `offensive/templates/pseudo-shell.py` | reusable Python `cmd.Cmd` pseudo-shell for blind/awkward RCE (SSTI/injection/deserialization) — IppSec's signature; copy into an engagement's `exploit/` and wire up the request + capture regex |
-| `install/offensive-packages.txt` | the apt tool list (installed after the OS + Core layers) |
-| `OFFENSIVE-METHODOLOGY.md` | the phase → MITRE ATT&CK → tool map behind the layer |
-| `PURPLE-TEAM.md` | the defensive mirror of `hacktheplanet` — Splunk/Sentinel detections + event-ID reference for each attack (purple-team perspective / red OPSEC) |
+| Layer                | Lives in                                                               | Examples                                        |
+| -------------------- | ---------------------------------------------------------------------- | ----------------------------------------------- |
+| **Core**             | **this repo**, vendored into each OS repo via `git subtree`            | zsh modules, tmux base, nvim, git/delta         |
+| **OS-native**        | `dotfiles-{MacBook,Windows,Fedora,Arch,openSUSE,Alpine,Gentoo}`        | package manager, clipboard shim, paths          |
+| **Role / offensive** | `dotfiles-Kali`                                                        | engagement scaffolding, C2, Impacket, wordlists |
 
-Same discipline as Core: every alias/function touching an optional tool is
-guarded by a `HAVE_*` flag, so the file is **inert** on a box where the tool
-isn't installed instead of erroring on shell start.
+Previously each repo carried its **own copy** of Core, and drift was caught
+after the fact with `core-diff.sh`. That works at 4 repos. At 9 it doesn't.
+This repo flips it: Core is authored **once, here**, then pulled into each OS
+repo as a vendored `core/` subtree. No more N-way reconciliation.
 
 ---
 
-## Commands
+## How an OS repo consumes Core
 
-| Command | What it does |
-|---------|--------------|
-| `mkengagement <name>` | scaffold a dated engagement workspace under `$ENGAGEMENTS_DIR`, seed `scope/scope.txt`, open it in `$EDITOR`, and `cd` in (sets `$ENGAGEMENT`) |
-| `eng` | fzf-jump between existing engagements; previews the scope sheet |
-| `bhce <dc> <user> <pass\|:hash> [domain]` | run NetExec's BloodHound CE collection, dropping a CE-ready zip into `loot/bloodhound/` |
-| `nmapsweep <target\|CIDR>` | conservative `-sCV` sweep, all-formats output into `./nmap/` |
-| `logshell` | record a `script(1)` transcript into the engagement's `notes/` for the audit trail |
-| `smb` / `ldap` / `winrm` | shorthands for `nxc <proto>` |
-| `seclists` | jump to `$SECLISTS_DIR` with the fzf preview stack |
-| `htp` / `ipp` / `xdev` / `evade` | open the field refs (`~/hacktheplanet` / `~/ippsec` / `~/exploitdev` / `~/evasion`) in `$EDITOR` |
-| `note "<text>"` | timestamped append to the engagement's `notes.md` (IppSec note discipline); `note` with no args opens it |
-| `cde` | `cd` back to the active engagement tree (`$ENGAGEMENT`) |
-| `lhost [iface]` | print your attacker/VPN IP (the `<your-ip>` for reverse shells) — prefers `tun0`, falls back to primary iface |
-| `ttyup` | print the TTY-upgrade stabilization sequence with your local rows/cols pre-filled |
-| `rocks <keyword>` | open an `ippsec.rocks` search for a technique/keyword |
+Each machine repo (e.g. `dotfiles-Fedora`) vendors this repo under `core/`:
 
-## tmux bindings
-
-| Binding | Popup |
-|---------|-------|
-| `prefix + f` | **projects** — Core sessionizer (unchanged) |
-| `prefix + e` | **engagements** — create-or-switch to an engagement session |
-| `prefix + w` | **everything** — Core menu, now surfaces engagements as `◆` rows when `~/engagements` exists |
-
-`prefix + e` lives here (the binding is in `os/kali.conf`, the script in
-`offensive/tmux/`, symlinked to `~/.config/tmux/scripts/tmux-eng.sh` by
-`bootstrap.sh`). `prefix + w` is **Core** but engagement-*agnostic*: the `◆`
-section only renders where an engagements dir exists, so it stays portable and
-syncs cleanly to all nine repos.
-
----
-
-## Engagement workspace
-
-Engagement **data never lives in this repo.** It lives in `$ENGAGEMENTS_DIR`
-(default `~/engagements`), outside any git tree; the repo's paranoid
-`.gitignore` is only a backstop. `mkengagement` lays out:
-
-```
-~/engagements/<YYYYMMDD>-<slug>/
-  scope/scope.txt        ← written & opened FIRST (ROE, auth ref, window, contacts)
-  recon/  scans/  web/    exploit/  screenshots/
-  loot/{creds,hashes,bloodhound}
-  report/  notes.md
+```bash
+# one-time, inside the OS repo:
+git subtree add --prefix=core https://github.com/<you>/dotfiles-core main --squash
 ```
 
-> Rule zero: `scope/scope.txt` is created before anything else for a reason.
-> Installing a tool is not permission to point it at anything — fill in scope,
-> in-scope/out-of-scope, the authorization reference and a "stop" contact first.
+That physically copies Core into `core/` and commits it. The repo now clones
+and works with **no submodule flags** — important, since these are public
+showcase repos people will browse.
 
----
+To update every OS repo after a Core change, run the loop helper from this repo:
 
-## Tooling notes that will actually bite you
-
-**CrackMapExec is gone — it's `nxc` now.** CME was archived in 2023; the
-maintained successor is **NetExec** (`nxc`), and it's the single
-highest-leverage tool in the kit — auth, enumeration, lateral movement,
-credential extraction and BloodHound collection across SMB/LDAP/WinRM/MSSQL/
-RDP/FTP/SSH in one scriptable interface. Old `cme` muscle memory just becomes
-`nxc`.
-
-**BloodHound is now BloodHound CE.** Legacy 4.x collectors don't cleanly ingest
-into Community Edition. The `bhce` helper drives nxc's `--bloodhound` module,
-which packages a CE-ready zip. Run BloodHound CE itself from its official
-docker-compose — it's a Postgres-backed web app, not an apt package.
-
-**Upstream-only tools.** A few move faster than the Kali repo or aren't packaged
-— Sliver, Havoc, Caldera, sometimes BBOT/ligolo-ng. `offensive-packages.txt`
-flags these with their install method (same pattern Core already uses for
-starship/atuin on some distros).
-
-**WSL2 is NAT'd.** A listener / reverse shell / C2 in Kali under WSL2 isn't
-reachable from your LAN until you set `networkingMode=mirrored` in the
-**Windows-side** `%UserProfile%\.wslconfig` (Win11 22H2+) — *not*
-`/etc/wsl.conf`. This bites every Responder/Sliver/Metasploit handler setup.
-
-**Debian binary renames** (handled by Core already): `bat` runs as `batcat`,
-`fd-find` installs `fdfind`. Core's `tools.zsh` resolves both, so aliases and
-config work unchanged here.
-
----
-
-## Authorization
-
-Every tool in this layer is for **authorized engagements with written rules of
-engagement only.** The scaffolding (scope-first workspace, `logshell` audit
-trail, data kept out of the repo) exists to keep that discipline mechanical
-rather than optional. See `OFFENSIVE-METHODOLOGY.md` for the full phase → ATT&CK
-mapping and the OPSEC hygiene baked into the layer.
-
-## Engagement workflow
-
-```sh
-mkengagement acme-external      # scaffold ~/engagements/YYYYMMDD-acme-external, open scope/scope.txt
-eng                             # fzf-jump between existing engagements; cd + sets $ENGAGEMENT
-cd "$ENGAGEMENT/recon"          # navigate into a subdir of the active engagement
-logshell                        # record shell session via script(1) into notes/ for audit trail
-nmapsweep 10.10.10.0/24         # conservative -sCV sweep, output into ./nmap/
+```bash
+./scripts/sync-core.sh          # subtree-pulls main into all 9 OS repos
+./scripts/sync-core.sh --dry-run
 ```
+
+> Run `make` (no target) for a discoverable list of every entry point —
+> `make setup` / `doctor` / `audit` / `test` / `bench` / `sync` / `hooks` all shell out
+> to the `scripts/*.sh` dev tooling, which stays the single source of truth. (`make doctor`
+> is the read-only triage half of `setup`; `bin/` holds only what ships — `clip`/`clip-paste`;
+> the gate scripts live in `scripts/`.)
+
+The OS repo's `bootstrap.sh` then symlinks `core/zsh/*.zsh`, `core/tmux/`,
+`core/nvim/`, `core/git/`, `core/vim/`, `core/starship/`, `core/mise/`, and `core/bin/` into
+place alongside its own OS-native files. (`core/bin/` is just `clip`/`clip-paste`
+now — the dev scripts in `core/scripts/` are repo tooling and aren't symlinked.)
+
+---
+
+## Why subtree (not submodule, not chezmoi)
+
+- **vs submodule** — submodules store a _pointer_, so a fresh clone is empty
+  until `git submodule update --init`. Subtree vendors the actual files, so
+  every repo is self-contained and clone-and-go. Better for portfolio repos.
+- **vs chezmoi** — chezmoi (one repo + per-OS templates) is the most DRY answer
+  and is the right move if you ever want to collapse nine repos into one. It
+  trades the nine-repo breadth-portfolio for minimalism. This system keeps the
+  portfolio; switching to chezmoi later is a content migration, not a rewrite,
+  because the Core files here are already plain and OS-agnostic.
+
+---
+
+## Layout
+
+Core is fully populated — every layer below is authored here and synced out to
+each OS repo's vendored `core/`. The canonical inventory is `core.manifest`;
+this tree is the human-readable version of it.
+
+```text
+bin/                      SHIPPED — vendored into every OS repo (in core.manifest):
+  clip                    cross-OS "copy to clipboard"   (WSL/macOS/Wayland/X11)
+  clip-paste              cross-OS "paste from clipboard"
+lib/                      SHIPPED — vendored bash libraries (sourced, not run):
+  ux.sh                   shared palette/glyphs/spinner — each OS repo's bootstrap.sh
+                          sources this (the pre-shell installer can't load the zsh ui.zsh)
+scripts/                  DEV TOOLING — runs the gate HERE, never vendored out:
+  audit-core.sh           THE gate: manifest/exec-bit/syntax/lint/behavioral (CI + pre-commit run this)
+  test-core.sh            behavioral suite: clip ladder + load-order smoke + functions + nvim load
+  bench-core.sh           hermetic hyperfine benchmark of the canonical zsh load chain
+  sync-core.sh            loop git-subtree pull across all OS repos (the maintain button)
+  update-plugins.sh       roll the pinned zsh-plugin SHAs (zsh/plugins.zsh) to upstream HEAD
+zsh/                      sourced by each OS repo's .zshrc loader, IN THIS ORDER:
+  loader.zsh              canonical byte-compile + source loop (vendored so each OS .zshrc can source THIS instead of duplicating it)
+  tools.zsh               detection + single init point (zoxide/starship/atuin/mise) — load FIRST
+  ui.zsh                  terminal-UX primitives (_core_err/warn/ok/hint/confirm/spin) — gum-aware
+  options.zsh             setopts + completion system (compinit, cached) + zstyles
+  history.zsh             HISTFILE/HISTSIZE/SAVEHIST + history setopts + secret-ignore
+  aliases.zsh             modern-CLI aliases, each guarded by tools.zsh detection
+  git.zsh                 curated OMZ-style git aliases + git_main_branch helper
+  functions.zsh           cross-OS shell functions (mkcd, extract, up, ...)
+  fzf.zsh                 fzf env + zle widgets (Ctrl-T/R, Alt-Z, Ctrl-G) + fif/fbr
+  bindings.zsh            vi-mode keybindings (zvm_after_init hook)
+  plugins.zsh             lightweight plugin loader + plugin list
+  op.zsh                  1Password CLI helpers
+  maint.zsh               daily-maintenance control surface (maint-install/run/log)
+  update.zsh              `up` updater + once/day "updates available" nudge
+  completions/            autoloaded completions for Core's verbs (up/extract/mkcd/…) — fpath-added by options.zsh
+starship/
+  starship.toml           prompt theme -> symlinked to ~/.config/starship.toml
+mise/
+  config.toml             global runtime versions (node/python/ruby/go/rust/java/lua)
+sesh/
+  sesh.toml.example       portable session-manager config (seeded, not symlinked)
+tmux/
+  tmux.conf               portable base config (OS bits -> os/<os>.conf)
+  tmux.reset.conf         the keybinding layer (prefix C-a lives here)
+  scripts/                popup scripts: tmux-battery / tmux-cheat / tmux-menu / tmux-netinfo / tmux-scratch / tmux-sesh
+maint/
+  dotfiles-maint.sh       the daily "update everything (that's safe)" runner
+git/
+  gitconfig               portable git config (OS + identity layered via [include])
+  local.gitconfig.example identity template — seeded by bootstrap, never tracked
+lazygit/
+  config.yml              tokyonight theme -> symlinked to ~/.config/lazygit/config.yml
+vim/
+  vimrc                   plugin-free fallback for boxes with only stock vim -> symlinked to ~/.vimrc
+nvim/                     entire lazy.nvim tree: lua/gerrrt/{config,plugins,servers,utils}
+core.manifest             the canonical list of Core files (drives sync + audits)
+core.version              human-readable Core version stamp (read by `core-version`)
+```
+
+> Load order is load-bearing: `tools` inits atuin (registers its widget), `options`
+> runs `compinit` (fzf-tab + carapace need it), and `fzf` defines its zle widgets
+> BEFORE `plugins` loads zsh-vi-mode, whose init fires the keybinding hook in
+> `bindings`. `ui` loads right after `tools` (it only defines the `_core_*` UX
+> helpers every later module may call). Each OS repo's `.zshrc` sources them as
+> `tools → ui → options → history → aliases → git → functions → fzf → bindings →
+plugins → op → maint → update → os → local` (the canonical order in
+> `core.manifest`).
+
+---
+
+## Adding a new file to Core
+
+Core is already complete (zsh, tmux, nvim, git, starship, mise, and the clip
+scripts are all here). The promotion from the old per-repo copies is done — so
+this is now just the procedure for the occasional **new** Core file:
+
+1. Confirm it's actually Core: identical on every machine, **not** OS-specific,
+   **not** offensive. (OS-specific → the OS repo; offensive → `dotfiles-Kali`.)
+2. Drop it into the matching path here.
+3. Strip anything OS-specific out into the OS repo (clipboard, paths, pkg mgr).
+4. Add the path to `core.manifest` — that's the contract the audits read.
+5. Wire the symlink into each OS repo's `bootstrap.sh` if the file needs one.
+6. `./scripts/sync-core.sh` to push it into every OS repo's vendored `core/`.
+
+## Maintaining Core (the automated workflow)
+
+Day-to-day this is the whole loop — author, gate, fan out:
+
+1. **Pick the layer.** Core only if identical everywhere **and** not OS-specific
+   **and** not offensive. Otherwise it belongs in the OS repo (or `dotfiles-Kali`).
+2. **Edit here**, add a `[Unreleased]` `CHANGELOG.md` bullet in the _same_ commit
+   (Conventional Commits message).
+3. **`make audit-changed`** (fast loop) → **`make audit`** (the full gate).
+4. **`make sync`** — fan Core out to every OS repo (only after a green audit).
+
+Scheduled bots now cover the chores you used to have to _remember to check_. They
+**report first** (PR or deduped issue) and never vendor anything out on their own —
+your job is to glance at what they open and merge or act:
+
+| Bot (workflow) | Repo | Cadence | Opens |
+| --- | --- | --- | --- |
+| `/doc-audit` + `/tool-scout` (`claude-routines.yml`) | core | weekly + on demand | findings **issue** |
+| pin freshness (`freshness.yml`) | core | weekly | **PR** (rolls zsh-plugin + nvim pins forward) |
+| `fleet-sync.yml` | web | weekly | **PR** (regenerated site data) |
+| `nvim-sync.yml` | Windows | weekly | **PR** when `nvim/` drifts |
+| `package-freshness.yml` | Windows | weekly | scoop/winget **issue** |
+
+A quiet week (no bot PR/issue) means nothing needs doing. Every bot is
+`workflow_dispatch`-able to run on demand.
+
+> **One wiring step:** `claude-routines.yml` is inert until the
+> `CLAUDE_CODE_OAUTH_TOKEN` secret is set on this repo (`claude setup-token`) — until
+> then the doc-audit / tool-scout issues won't appear.
+
+### Cutting a release
+
+1. `make release VERSION=X.Y.Z` — promotes `CHANGELOG.md`'s hand-written
+   `[Unreleased]` to a dated `## [vX.Y.Z]` heading, bumps `core.version`, runs the
+   audit.
+2. Commit it, then — if you publish a GitHub Release — `make release-notes` drafts
+   the release body from Conventional Commits (it does **not** touch `CHANGELOG.md`).
