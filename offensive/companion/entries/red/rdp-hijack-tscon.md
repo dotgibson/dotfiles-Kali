@@ -6,7 +6,7 @@ phase: Lateral Movement
 attack:
   tactic: TA0008
   techniques: [T1563.002]
-platform: [windows]
+platform: [windows, network]
 source: hacktheplanet §"Lateral movement & remote execution"
 pair: rdp-hijack-4688
 ---

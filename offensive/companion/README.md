@@ -78,7 +78,7 @@ Access, Lateral Movement, and Discovery:
 | NTLM relay | `4624` workstation mismatch | T1557.001 |
 | Coerce DC (PetitPotam/printerbug) | `5145` named-pipe access | T1187 |
 | AD CS ESC1 (certipy) | `4886` SAN mismatch | T1649 |
-| Remote LSASS / LSA secrets | `4656` dump-shaped handle | T1003.001 |
+| Remote LSASS dump (lsassy) | `4656` dump-shaped handle | T1003.001 |
 | RDP session hijack (tscon) | `4688` tscon `/dest:rdp-tcp#` | T1563.002 |
 
 Growth is mechanical now that the drift gate exists: author the red+blue entry
