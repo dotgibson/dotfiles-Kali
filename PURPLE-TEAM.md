@@ -288,6 +288,41 @@ index=main EventCode=5136 Attribute_LDAP_Display_Name="msDS-AllowedToActOnBehalf
 ```
 <!-- companion:end rbcd-5136 -->
 
+<!-- companion:gen unconstrained-deleg-4624 -->
+**Detect unconstrained-deleg abuse (DC machine-account auth to a non-DC, 4624)**
+
+Detection posture: **soft** — the TGT caching is legitimate Kerberos. The realistic
+tell is the coerced auth *landing*: a domain controller's computer account doing a
+network logon (`4624`) to a host that isn't a DC, which DCs essentially never do.
+Allowlist your DC computer accounts and DC hosts below. Best paired with the
+coercion alert (`coercion-5145`) firing just before, and with config hygiene —
+inventory `TRUSTED_FOR_DELEGATION` accounts that shouldn't have it.
+
+```spl
+index=main EventCode=4624 Logon_Type=3 Account_Name="*$"
+| search Account_Name IN ("DC1$","DC2$")
+| where NOT (host IN ("DC1","DC2"))
+| table _time, host, Account_Name, Source_Network_Address
+```
+<!-- companion:end unconstrained-deleg-4624 -->
+
+<!-- companion:gen dpapi-backupkey-5145 -->
+**Detect DPAPI backup-key theft (protected_storage pipe, 5145)**
+
+Detection posture: **narrow but real** — the backup-key retrieval rides MS-BKRP
+over the DC's `protected_storage` named pipe (`5145`), and almost nothing but a
+genuine domain backup operation touches it. A non-backup principal accessing
+`protected_storage` on a DC is the tell. The *offline* decryption that follows is
+invisible — this RPC is the only on-wire moment. Needs detailed file-share
+auditing on DCs.
+
+```spl
+index=main EventCode=5145 Relative_Target_Name="protected_storage"
+| regex Share_Name="(?i).*ipc\$$"
+| table _time, host, Account_Name, Source_Address, Share_Name, Relative_Target_Name
+```
+<!-- companion:end dpapi-backupkey-5145 -->
+
 ---
 
 ## Windows Event ID quick reference
