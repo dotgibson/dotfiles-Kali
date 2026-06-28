@@ -66,7 +66,7 @@ wsl.exe --shutdown             # from a Windows terminal, then reopen Kali
 ```
 
 Keeping Core current later is the same as every repo: from `dotfiles-core`,
-`./bin/sync-core.sh dotfiles-Kali`, then `./bootstrap.sh --links-only` here.
+`./scripts/sync-core.sh dotfiles-Kali`, then `./bootstrap.sh --links-only` here.
 
 ## bootstrap flags
 
@@ -107,6 +107,7 @@ before `local` (so a machine-specific override still wins).
 | `install/offensive-packages.txt` | the apt tool list (installed after the OS + Core layers) |
 | `OFFENSIVE-METHODOLOGY.md` | the phase → MITRE ATT&CK → tool map behind the layer |
 | `PURPLE-TEAM.md` | the defensive mirror of `hacktheplanet` — Splunk/Sentinel detections + event-ID reference for each attack (purple-team perspective / red OPSEC) |
+| `offensive/companion` | the structured, ATT&CK-tagged red↔blue companion (the paired sibling of `hacktheplanet`/`PURPLE-TEAM.md`) — a **vendored `git subtree` of [Gerrrt/htpx](https://github.com/Gerrrt/htpx)** (provenance in `companion.lock`; resync with `scripts/sync-companion.sh`). Symlinked to `~/companion`, browsed with `htpx` |
 
 Same discipline as Core: every alias/function touching an optional tool is
 guarded by a `HAVE_*` flag, so the file is **inert** on a box where the tool
@@ -126,6 +127,7 @@ isn't installed instead of erroring on shell start.
 | `smb` / `ldap` / `winrm` | shorthands for `nxc <proto>` |
 | `seclists` | jump to `$SECLISTS_DIR` with the fzf preview stack |
 | `htp` / `ipp` / `xdev` / `evade` | open the field refs (`~/hacktheplanet` / `~/ippsec` / `~/exploitdev` / `~/evasion`) in `$EDITOR` |
+| `htpx` | fuzzy-pick an attack from the companion, preview it beside its paired blue detection, fill `{{slots}}` from `$RHOST`/`$LHOST`/… and copy |
 | `note "<text>"` | timestamped append to the engagement's `notes.md` (IppSec note discipline); `note` with no args opens it |
 | `cde` | `cd` back to the active engagement tree (`$ENGAGEMENT`) |
 | `lhost [iface]` | print your attacker/VPN IP (the `<your-ip>` for reverse shells) — prefers `tun0`, falls back to primary iface |
