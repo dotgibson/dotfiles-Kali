@@ -20,7 +20,9 @@
 #      script does NOT touch (that's gen-views.sh's job). Fix + commit both together.
 #
 # Pre-reqs the script enforces: a clean working tree (git subtree pull refuses to
-# run otherwise) and a companion.lock it can read the repo/branch/prefix from.
+# run otherwise) and a companion.lock it can read the repo/branch from. The prefix
+# (offensive/companion) is fixed — it's where the subtree was added — not read from
+# the lock.
 # ──────────────────────────────────────────────────────────────────────────────
 set -euo pipefail
 
@@ -50,6 +52,10 @@ branch="$(lock_field companion_branch)"
 old_sha="$(lock_field companion_sha)"
 [[ -n "$repo" ]]   || die "companion_repo missing from $LOCK"
 [[ -n "$branch" ]] || die "companion_branch missing from $LOCK"
+# The sha rewrite below REPLACES an existing companion_sha= line (awk) — it does not
+# insert one. So a lock with no companion_sha would let the pull succeed yet leave
+# the lock silently unchanged. Require the line up front so that can't happen.
+[[ -n "$old_sha" ]] || die "companion_sha missing/empty in $LOCK — add a 'companion_sha=' line before syncing."
 
 # Remote precedence: explicit arg → a git remote literally named in the lock →
 # the GitHub HTTPS URL derived from companion_repo. The arg lets you sync from a
@@ -63,13 +69,20 @@ else
 fi
 
 echo "sync-companion: prefix=$PREFIX  remote=$remote  branch=$branch"
-echo "sync-companion: locked at  ${old_sha:-<none>}"
+echo "sync-companion: locked at  $old_sha"
 
 # --check: peek at upstream without mutating the tree or the lock. Fetch the tip
 # and compare; report ahead / up-to-date. Exit 0 either way (informational) unless
 # the fetch itself fails.
 if [[ "$CHECK" == 1 ]]; then
-  upstream_sha="$(git ls-remote "$remote" "$branch" 2>/dev/null | awk 'NR==1{print $1}')"
+  # Resolve to an explicit refs/heads/<branch> so ls-remote can't match a same-named
+  # tag (a bare name is a ref PATTERN), and GIT_TERMINAL_PROMPT=0 so it never blocks
+  # on a credential prompt — same idiom as test/check-core-freshness.sh.
+  case "$branch" in
+    refs/*) ref="$branch" ;;
+    *) ref="refs/heads/$branch" ;;
+  esac
+  upstream_sha="$(GIT_TERMINAL_PROMPT=0 git ls-remote "$remote" "$ref" 2>/dev/null | awk 'NR==1{print $1}')"
   [[ -n "$upstream_sha" ]] || die "could not read $branch from $remote"
   echo "sync-companion: upstream ${branch} tip is $upstream_sha"
   if [[ "$upstream_sha" == "$old_sha" ]]; then
@@ -109,7 +122,7 @@ tmp="$(mktemp)"
 awk -v sha="$new_sha" '/^companion_sha=/{print "companion_sha=" sha; next} {print}' "$LOCK" >"$tmp"
 mv -- "$tmp" "$LOCK"
 
-echo "sync-companion: companion.lock  ${old_sha:-<none>} -> $new_sha"
+echo "sync-companion: companion.lock  $old_sha -> $new_sha"
 cat <<EOF
 
 sync-companion: pulled. Next:
