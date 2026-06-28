@@ -144,7 +144,7 @@ isn't installed instead of erroring on shell start.
 `offensive/tmux/`, symlinked to `~/.config/tmux/scripts/tmux-eng.sh` by
 `bootstrap.sh`). `prefix + w` is **Core** but engagement-*agnostic*: the `◆`
 section only renders where an engagements dir exists, so it stays portable and
-syncs cleanly to all nine repos.
+syncs cleanly to all eight repos.
 
 ---
 
