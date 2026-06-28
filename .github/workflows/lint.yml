@@ -10,6 +10,11 @@ name: lint
 #   • The vendored core/ subtree is EXCLUDED. It is a read-only copy of
 #     dotfiles-core gated by ITS OWN CI; a finding there is fixed upstream and
 #     would be a false red here. Every file list below filters ':!:core/**'.
+#   • offensive/companion/ is EXCLUDED for the same reason — it is a vendored
+#     subtree of Gerrrt/htpx, gated by its own CI; fix upstream, not here. The file
+#     lists also filter ':!:offensive/companion/**'. (The companion drift gate in
+#     companion.yml still RUNS the vendored gen-views.sh against this repo's flat
+#     views — that's the bridge check, not linting the vendored code.)
 #   • There is no Lua / StyLua leg: every Lua file lives under core/ (nvim), so a
 #     Lua linter here would only ever lint vendored code this repo can't change.
 #   • shfmt is ADVISORY, not blocking. bootstrap scripts across the fleet use
@@ -115,7 +120,7 @@ jobs:
         env:
           SHELLCHECK_OPTS: "-e SC1090 -e SC1091 -e SC2015 -e SC2088"
         run: |
-          mapfile -t files < <(git ls-files '*.sh' ':!:core/**')
+          mapfile -t files < <(git ls-files '*.sh' ':!:core/**' ':!:offensive/companion/**')
           if [ ${#files[@]} -eq 0 ]; then echo "no repo-owned .sh"; exit 0; fi
           printf 'shellcheck %s\n' "${files[@]}"
           shellcheck "${files[@]}"
@@ -123,7 +128,7 @@ jobs:
       # ── BLOCKING: bash parse gate — a broken edit can't ship green.
       - name: bash -n (syntax, repo-owned bash/sh)
         run: |
-          mapfile -t files < <(git ls-files '*.sh' ':!:core/**')
+          mapfile -t files < <(git ls-files '*.sh' ':!:core/**' ':!:offensive/companion/**')
           if [ ${#files[@]} -eq 0 ]; then echo "no repo-owned .sh"; exit 0; fi
           # Accumulate into rc rather than `bash -n "$f" && echo`: under the runner's
           # `set -e`, a failing command in a `&&` list is exempt from errexit, so a
@@ -137,7 +142,7 @@ jobs:
       # with `zsh -n` instead — the same approach Core's CI uses.
       - name: zsh -n (syntax, repo-owned zsh modules)
         run: |
-          mapfile -t files < <(git ls-files '*.zsh' ':!:core/**')
+          mapfile -t files < <(git ls-files '*.zsh' ':!:core/**' ':!:offensive/companion/**')
           if [ ${#files[@]} -eq 0 ]; then echo "no repo-owned .zsh"; exit 0; fi
           rc=0
           for f in "${files[@]}"; do echo "zsh -n $f"; zsh -n "$f" || rc=1; done
@@ -150,7 +155,7 @@ jobs:
       # omitted so a genuinely unexpected failure (e.g. a broken install) still reds.
       - name: shfmt (format check — advisory)
         run: |
-          mapfile -t files < <(git ls-files '*.sh' ':!:core/**')
+          mapfile -t files < <(git ls-files '*.sh' ':!:core/**' ':!:offensive/companion/**')
           if [ ${#files[@]} -eq 0 ]; then echo "no repo-owned .sh"; exit 0; fi
           if shfmt -i 2 -d "${files[@]}"; then
             echo "formatting matches the 2-space spec"
