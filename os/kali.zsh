@@ -33,6 +33,7 @@ alias aptshow='apt-cache show'
 if (( _IS_WSL )); then
   alias open='explorer.exe'
   command -v wslview >/dev/null && alias xdg-open='wslview'
+  [[ -n "${WINHOME:-}" ]] && alias cdwin='cd "$WINHOME"'
 fi
 
 unset _IS_WSL
