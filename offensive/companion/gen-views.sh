@@ -38,8 +38,18 @@ REPO="$(cd -- "$HERE/../.." && pwd)"
 
 # The flat files that carry generated blocks (paths relative to the repo root).
 # PURPLE-TEAM.md takes blue detections (HTML markers); hacktheplanet takes red
-# attacks (`#` markers).
-TARGETS=("PURPLE-TEAM.md" "offensive/hacktheplanet")
+# attacks (`#` markers). HOST-AGNOSTIC: this list is the default for the Kali host,
+# but a consumer can override it via $COMPANION_TARGETS (space/newline-separated,
+# repo-root-relative) — so the same script works when this dir is vendored into a
+# different repo, or runs standalone (no flat views) where it simply finds nothing
+# to do. A listed target that doesn't exist on disk is SKIPPED with a notice rather
+# than failing, which is what makes the standalone case green.
+if [[ -n "${COMPANION_TARGETS:-}" ]]; then
+  # honor both space- and newline-separated lists (fold newlines to spaces first)
+  read -r -a TARGETS <<<"${COMPANION_TARGETS//$'\n'/ }"
+else
+  TARGETS=("PURPLE-TEAM.md" "offensive/hacktheplanet")
+fi
 
 CHECK=0
 [[ "${1:-}" == "--check" ]] && CHECK=1
@@ -164,7 +174,10 @@ build_file() {
 rc=0
 for t in "${TARGETS[@]}"; do
   file="$REPO/$t"
-  [[ -f "$file" ]] || { echo "gen-views: target not found: $t" >&2; rc=1; continue; }
+  # A configured target that isn't present is skipped, not fatal — so a standalone
+  # checkout (just entries + this script, no flat views) passes cleanly. In a host
+  # that DOES ship the flat file, it exists, so it's always checked.
+  [[ -f "$file" ]] || { echo "gen-views: target not present, skipping: $t" >&2; continue; }
   if ! grep -qE '^(<!-- |# )companion:gen ' "$file"; then
     echo "gen-views: $t has no companion:gen markers — skipping" >&2
     continue

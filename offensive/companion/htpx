@@ -12,8 +12,9 @@
 #   {{rhost}}=$RHOST  {{lhost}}=$LHOST  {{domain}}=$DOMAIN  {{user}}=$USER_T
 #   {{password}}=$PASS  {{hostname}}=$HOSTNAME_T  {{nthash}}=$NTHASH
 #   {{port}}=$PORT  {{share}}=$SHARE
-# Deps: fzf (required); bat (nicer preview, falls back to cat); clip (Core helper,
-# falls back to stdout). Frontmatter is parsed with awk — no yq needed.
+# Deps: fzf (required); bat (nicer preview, falls back to cat); a clipboard tool
+# (Core `clip` / pbcopy / wl-copy / xclip / xsel — falls back to stdout if none).
+# Frontmatter is parsed with awk — no yq needed.
 # ──────────────────────────────────────────────────────────────────────────────
 set -euo pipefail
 # bash 5.2's patsub_replacement makes a literal `&` in a ${var//pat/repl} replacement
@@ -101,8 +102,15 @@ if printf '%s' "$cmd" | grep -oq '{{[a-z_]*}}'; then
     "$(printf '%s' "$cmd" | grep -o '{{[a-z_]*}}' | sort -u | tr '\n' ' ')" >&2
 fi
 
-if command -v clip >/dev/null 2>&1; then
-  printf '%s' "$cmd" | clip
+# Copy via the first clipboard tool available — the Core `clip` helper first (so
+# dotfiles users keep their integration), then the platform natives, so htpx works
+# standalone on macOS / Wayland / X11. Falls back to stdout when none is present.
+_clip=()
+for c in "clip" "pbcopy" "wl-copy" "xclip -selection clipboard" "xsel --clipboard --input"; do
+  if command -v "${c%% *}" >/dev/null 2>&1; then read -r -a _clip <<<"$c"; break; fi
+done
+if ((${#_clip[@]})); then
+  printf '%s' "$cmd" | "${_clip[@]}"
   printf '%s\n\n\033[2mcopied to clipboard\033[0m\n' "$cmd" >&2
 else
   printf '%s\n' "$cmd"
