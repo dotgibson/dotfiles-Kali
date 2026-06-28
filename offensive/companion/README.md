@@ -24,7 +24,8 @@ companion/
 
 This directory is **host-agnostic** (the groundwork for living in its own repo and
 being vendored back like `core/`): `gen-views.sh`'s flat-view targets default to
-this repo's `PURPLE-TEAM.md` + `hacktheplanet` but can be overridden with
+this repo's `PURPLE-TEAM.md` + `offensive/hacktheplanet` (repo-root-relative) but
+can be overridden with
 `$COMPANION_TARGETS` (and a target that isn't present is skipped, so a standalone
 checkout with no flat views is still green), and `htpx` copies via the first of
 `clip`/`pbcopy`/`wl-copy`/`xclip`/`xsel` it finds (stdout otherwise) rather than

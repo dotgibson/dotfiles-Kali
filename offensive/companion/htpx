@@ -105,12 +105,12 @@ fi
 # Copy via the first clipboard tool available — the Core `clip` helper first (so
 # dotfiles users keep their integration), then the platform natives, so htpx works
 # standalone on macOS / Wayland / X11. Falls back to stdout when none is present.
-_clip_cmd=""
+_clip=()
 for c in "clip" "pbcopy" "wl-copy" "xclip -selection clipboard" "xsel --clipboard --input"; do
-  if command -v "${c%% *}" >/dev/null 2>&1; then _clip_cmd="$c"; break; fi
+  if command -v "${c%% *}" >/dev/null 2>&1; then read -r -a _clip <<<"$c"; break; fi
 done
-if [[ -n "$_clip_cmd" ]]; then
-  printf '%s' "$cmd" | $_clip_cmd
+if ((${#_clip[@]})); then
+  printf '%s' "$cmd" | "${_clip[@]}"
   printf '%s\n\n\033[2mcopied to clipboard\033[0m\n' "$cmd" >&2
 else
   printf '%s\n' "$cmd"

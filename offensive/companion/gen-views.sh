@@ -45,7 +45,8 @@ REPO="$(cd -- "$HERE/../.." && pwd)"
 # to do. A listed target that doesn't exist on disk is SKIPPED with a notice rather
 # than failing, which is what makes the standalone case green.
 if [[ -n "${COMPANION_TARGETS:-}" ]]; then
-  read -r -a TARGETS <<<"$COMPANION_TARGETS"
+  # honor both space- and newline-separated lists (fold newlines to spaces first)
+  read -r -a TARGETS <<<"${COMPANION_TARGETS//$'\n'/ }"
 else
   TARGETS=("PURPLE-TEAM.md" "offensive/hacktheplanet")
 fi
