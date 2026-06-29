@@ -1,17 +1,11 @@
-<div align="center">
-
 # 🔴 dotfiles-Kali
 
-### A pentester's terminal, version-controlled.
-
-The offensive role layer — recon → exploit → evasion, on a Kali/WSL2 base.
+**A pentester's terminal, version-controlled.** The offensive role layer —
+recon → exploit → evasion, on a Kali/WSL2 base.
 
 `recon` · `exploit` · `evasion`
 
-[![showcase](https://img.shields.io/badge/showcase-live-7aa2f7?style=flat-square)](https://gerrrt.github.io/dotfiles-web/)
-[![red team](https://img.shields.io/badge/red--team-f7768e?style=flat-square)]()
-
-</div>
+[![showcase](https://img.shields.io/badge/showcase-live-7aa2f7?style=flat-square)](https://gerrrt.github.io/dotfiles-web/) ![red team](https://img.shields.io/badge/red--team-f7768e?style=flat-square)
 
 ---
 
