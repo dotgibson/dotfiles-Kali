@@ -350,17 +350,21 @@ index=main EventCode=4698
 <!-- companion:end schtask-4698 -->
 
 <!-- companion:gen wmi-subscription-sysmon -->
-**Detect WMI subscription persistence (Sysmon 19/20/21)**
+**Detect WMI subscription persistence (Sysmon 20 consumer)**
 
-The Security log barely sees this; Sysmon does. Sysmon `19` (WmiFilter), `20`
-(WmiConsumer), and `21` (WmiBinding) fire when a filter/consumer/binding is
-registered. A `CommandLineEventConsumer` (event `20`) whose `Destination` runs
-PowerShell/cmd/a LOLBin is the high-fidelity tell — legitimate permanent
-consumers are rare and usually from known management software, so allowlist those
-and alert on the rest. Requires Sysmon with WMI eventing (schema ≥ 4.1).
+The Security log barely sees this; Sysmon does. The WMI-eventing family is Sysmon
+`19` (WmiFilter), `20` (WmiConsumer), `21` (WmiBinding). The command lives in the
+consumer, so this query keys on event `20` and matches its `Destination` — a
+`CommandLineEventConsumer` running PowerShell/cmd/a LOLBin is the high-fidelity
+tell. The binding (`21`) and filter (`19`) carry no command, so don't fold them
+into this `Destination` regex; instead treat **any** new `21`
+(`__FilterToConsumerBinding`) as its own cheap, low-volume alert. Legitimate
+permanent consumers are rare and usually from known management software, so
+allowlist those and alert on the rest. Requires Sysmon with WMI eventing
+(schema ≥ 4.1).
 
 ```spl
-index=main (EventCode=20 OR EventCode=21)
+index=main EventCode=20
 | regex Destination="(?i)(powershell|cmd\.exe|mshta|wscript|cscript|rundll32|-enc|FromBase64)"
 | table _time, host, User, Name, Type, Destination, Query
 ```
