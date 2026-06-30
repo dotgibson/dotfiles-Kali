@@ -11,7 +11,7 @@ pair: okta-mfa-reset
 ---
 
 The invariant is the Okta System Log event itself: `user.mfa.factor.reset_all` (or
-a factor deactivate). Routine during genuine help-desk resets, so detect on the
+a `user.mfa.factor.deactivate`). Routine during genuine help-desk resets, so detect on the
 correlation — a reset *not* tied to an approved ticket, or one immediately followed
 by a new-factor enrollment plus a sign-in from a new device/geo.
 

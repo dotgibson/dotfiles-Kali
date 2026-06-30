@@ -4,7 +4,7 @@ title: Rogue IdP → federation backdoor (sign in as anyone)
 section: Okta / identity provider
 phase: Persistence
 attack:
-  tactic: TA0005
+  tactic: TA0003
   techniques: [T1556]
 platform: [okta]
 source: Okta tenant compromise (add-IdP / AiTM federation backdoor)

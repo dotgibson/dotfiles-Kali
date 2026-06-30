@@ -4,7 +4,7 @@ title: Detect IdP create / activate (Okta System Log)
 detection: okta-system-log
 event_ids: []
 attack:
-  tactic: TA0005
+  tactic: TA0003
   techniques: [T1556]
 source: Okta tenant compromise (add-IdP / AiTM federation backdoor)
 pair: okta-idp-backdoor

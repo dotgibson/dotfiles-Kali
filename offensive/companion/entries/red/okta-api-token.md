@@ -11,12 +11,15 @@ source: Okta post-compromise persistence
 pair: okta-api-token-audit
 ---
 
-After compromising an admin, mint an API token: long-lived, MFA-free,
+After compromising an admin, mint a static API token: long-lived, MFA-free,
 non-interactive, carrying the creator's privileges, and surviving the admin's
-password/session reset — a clean tenant backdoor. Created in the admin console
-(Security → API → Tokens) or programmatically with an admin session; either way it
-writes `system.api_token.create`. (Cloud IdP — no slots.)
+password/session reset — a clean tenant backdoor. SSWS tokens are created in the
+**Admin Console only** (Security → API → Tokens → Create Token) — there is no REST
+endpoint that mints one (the API only lists/revokes them); the supported
+programmatic alternative is an OAuth 2.0 service app with a private-key JWT. Either
+path writes `system.api_token.create`. (Cloud IdP — no slots.)
 
 ```sh
-curl -s -X POST "https://<org>.okta.com/api/v1/api-tokens" -H "Authorization: SSWS <admin-token>" -H "Content-Type: application/json" -d '{"name":"backup"}'
+# create it in the Admin Console (Security → API → Tokens → Create Token), then use it:
+curl -s "https://<org>.okta.com/api/v1/users/me" -H "Authorization: SSWS <new-token>"
 ```
