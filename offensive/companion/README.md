@@ -1,4 +1,15 @@
-# companion — structured, ATT&CK-tagged, red↔blue-paired pentest reference
+# ⚔️ htpx
+
+**Every attack, beside its detection.** An ATT&CK-tagged, red↔blue paired
+corpus — browse an attack beside its detection, fill `{{slots}}`, clip.
+
+`fzf` · `mitre-attack` · `purple-team`
+
+[![showcase](https://img.shields.io/badge/showcase-live-7aa2f7?style=flat-square)](https://gerrrt.github.io/dotfiles-web/) ![purple team](https://img.shields.io/badge/purple--team-bb9af7?style=flat-square)
+
+---
+
+**companion** — structured, ATT&CK-tagged, red↔blue-paired pentest reference
 
 Restructures the offensive corpus into machine-readable entries so the same
 content can be **searched, ATT&CK-tagged, target-substituted, and paired with its
@@ -73,8 +84,9 @@ No mainstream tool ships attacks paired with the telemetry they trip.
 
 ## Corpus
 
-16 paired concepts + 1 unpaired recon entry (SMB enum), spanning Credential
-Access, Privilege Escalation, Lateral Movement, and Discovery:
+22 paired concepts + 1 unpaired recon entry (SMB enum), spanning Credential
+Access, Privilege Escalation, Lateral Movement, Persistence, Execution, and
+Discovery:
 
 | Attack (red)                      | Detection (blue)                                      | ATT&CK    |
 | --------------------------------- | ----------------------------------------------------- | --------- |
@@ -94,6 +106,12 @@ Access, Privilege Escalation, Lateral Movement, and Discovery:
 | DPAPI domain backup key           | `5145` protected_storage pipe                         | T1555     |
 | SeImpersonate → SYSTEM (Potato)   | `4688` service-acct → SYSTEM shell _(moderate)_       | T1134.001 |
 | Device-code phishing (Entra)      | Entra sign-in `deviceCode` flow _(KQL, cloud)_        | T1528     |
+| Golden Ticket (forged TGT)        | `4769` TGS with no preceding `4768`                   | T1558.001 |
+| GPP cpassword (SYSVOL)            | `5145` SYSVOL `Groups.xml` read                       | T1552.006 |
+| NTDS.dit dump (ntdsutil/VSS)      | `4688` ntdsutil/vssadmin + `8222`                     | T1003.003 |
+| WMI exec (impacket-wmiexec)       | `4688` `WmiPrvSE.exe` child shell                     | T1047     |
+| Scheduled-task persistence        | `4698` task created (suspicious action)               | T1053.005 |
+| WMI subscription persistence      | Sysmon `19`/`20`/`21` consumer/binding               | T1546.003 |
 
 Growth is mechanical now that the drift gate exists: author the red+blue entry
 pair, mark the matching flat blocks, then `gen-views.sh`. For **on-prem** pairs the
