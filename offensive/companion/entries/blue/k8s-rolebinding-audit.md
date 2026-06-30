@@ -20,6 +20,8 @@ GitOps/IaC principals this is near-zero-false-positive.
 K8s audit telemetry, companion-only — `PURPLE-TEAM.md` is on-prem Windows.
 
 ```spl
-index=k8s sourcetype=*apiserver*audit* verb IN (create, update, patch) objectRef.resource IN (clusterrolebindings, rolebindings) "requestObject.roleRef.name"=cluster-admin
+index=k8s sourcetype=*apiserver*audit* verb IN (create, update, patch) objectRef.resource IN (clusterrolebindings, rolebindings)
+| spath
+| search "requestObject.roleRef.name"=cluster-admin
 | table _time, user.username, objectRef.name, "requestObject.subjects{}.name"
 ```

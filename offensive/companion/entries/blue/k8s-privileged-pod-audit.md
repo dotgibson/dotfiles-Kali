@@ -26,5 +26,6 @@ index=k8s sourcetype=*apiserver*audit* verb=create objectRef.resource=pods
 | spath
 | where 'requestObject.spec.containers{}.securityContext.privileged'="true"
     OR 'requestObject.spec.hostPID'="true"
+    OR 'requestObject.spec.volumes{}.hostPath.path'="/"
 | table _time, user.username, objectRef.namespace, objectRef.name, sourceIPs{}
 ```

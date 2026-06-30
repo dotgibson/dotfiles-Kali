@@ -117,7 +117,7 @@ and Kubernetes:
 | DCShadow (rogue DC)               | `4742` `GC/` SPN write + `5137`/`4662`               | T1207     |
 | Illicit consent grant (Entra)     | Entra audit "Consent to application" _(KQL, cloud)_  | T1528     |
 | SP credential backdoor (Entra)    | Entra audit "Add SP credentials" _(KQL, cloud)_     | T1098.001 |
-| Privileged pod → node escape (K8s) | audit: privileged/hostPID/hostPath pod create       | T1610     |
+| Privileged pod → node escape (K8s) | audit: privileged/hostPID/hostPath pod create       | T1610/T1611 |
 | Pod exec / attach (K8s)           | audit: `pods/exec` subresource create                | T1609     |
 | Cluster-admin binding (K8s)       | audit: roleRef `cluster-admin` binding               | T1098     |
 | IAM access-key backdoor (AWS)     | CloudTrail `CreateAccessKey` actor≠target _(cloud)_  | T1098.001 |

@@ -21,5 +21,6 @@ K8s audit telemetry, companion-only — `PURPLE-TEAM.md` is on-prem Windows.
 
 ```spl
 index=k8s sourcetype=*apiserver*audit* verb=create objectRef.resource=pods objectRef.subresource IN (exec, attach)
+| spath
 | table _time, user.username, objectRef.namespace, objectRef.name, sourceIPs{}
 ```
