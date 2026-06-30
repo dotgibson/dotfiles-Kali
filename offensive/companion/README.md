@@ -84,9 +84,10 @@ No mainstream tool ships attacks paired with the telemetry they trip.
 
 ## Corpus
 
-26 paired concepts + 1 unpaired recon entry (SMB enum), spanning Credential
+29 paired concepts + 1 unpaired recon entry (SMB enum), spanning Credential
 Access, Privilege Escalation, Lateral Movement, Persistence, Execution, Defense
-Evasion, and Discovery — on-prem AD plus a growing Entra/M365 cloud slice:
+Evasion, and Discovery — on-prem AD plus a multi-cloud slice (Entra/M365, AWS,
+GCP):
 
 | Attack (red)                      | Detection (blue)                                      | ATT&CK    |
 | --------------------------------- | ----------------------------------------------------- | --------- |
@@ -116,6 +117,9 @@ Evasion, and Discovery — on-prem AD plus a growing Entra/M365 cloud slice:
 | DCShadow (rogue DC)               | `4742` `GC/` SPN write + `5137`/`4662`               | T1207     |
 | Illicit consent grant (Entra)     | Entra audit "Consent to application" _(KQL, cloud)_  | T1528     |
 | SP credential backdoor (Entra)    | Entra audit "Add SP credentials" _(KQL, cloud)_     | T1098.001 |
+| IAM access-key backdoor (AWS)     | CloudTrail `CreateAccessKey` actor≠target _(cloud)_  | T1098.001 |
+| Console takeover (AWS)            | CloudTrail Create/UpdateLoginProfile _(cloud)_       | T1098     |
+| SA key creation (GCP)            | Cloud Audit `CreateServiceAccountKey` _(cloud)_      | T1098.001 |
 
 Growth is mechanical now that the drift gate exists: author the red+blue entry
 pair, mark the matching flat blocks, then `gen-views.sh`. For **on-prem** pairs the
