@@ -84,10 +84,10 @@ No mainstream tool ships attacks paired with the telemetry they trip.
 
 ## Corpus
 
-29 paired concepts + 1 unpaired recon entry (SMB enum), spanning Credential
+32 paired concepts + 1 unpaired recon entry (SMB enum), spanning Credential
 Access, Privilege Escalation, Lateral Movement, Persistence, Execution, Defense
-Evasion, and Discovery — on-prem AD plus a multi-cloud slice (Entra/M365, AWS,
-GCP):
+Evasion, and Discovery — on-prem AD, a multi-cloud slice (Entra/M365, AWS, GCP),
+and Kubernetes:
 
 | Attack (red)                      | Detection (blue)                                      | ATT&CK    |
 | --------------------------------- | ----------------------------------------------------- | --------- |
@@ -117,6 +117,9 @@ GCP):
 | DCShadow (rogue DC)               | `4742` `GC/` SPN write + `5137`/`4662`               | T1207     |
 | Illicit consent grant (Entra)     | Entra audit "Consent to application" _(KQL, cloud)_  | T1528     |
 | SP credential backdoor (Entra)    | Entra audit "Add SP credentials" _(KQL, cloud)_     | T1098.001 |
+| Privileged pod → node escape (K8s) | audit: privileged/hostPID/hostPath pod create       | T1610/T1611 |
+| Pod exec / attach (K8s)           | audit: `pods/exec` subresource create                | T1609     |
+| Cluster-admin binding (K8s)       | audit: roleRef `cluster-admin` binding               | T1098     |
 | IAM access-key backdoor (AWS)     | CloudTrail `CreateAccessKey` actor≠target _(cloud)_  | T1098.001 |
 | Console takeover (AWS)            | CloudTrail Create/UpdateLoginProfile _(cloud)_       | T1098     |
 | SA key creation (GCP)            | Cloud Audit `CreateServiceAccountKey` _(cloud)_      | T1098.001 |
