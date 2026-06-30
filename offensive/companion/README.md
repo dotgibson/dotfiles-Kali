@@ -84,9 +84,9 @@ No mainstream tool ships attacks paired with the telemetry they trip.
 
 ## Corpus
 
-22 paired concepts + 1 unpaired recon entry (SMB enum), spanning Credential
-Access, Privilege Escalation, Lateral Movement, Persistence, Execution, and
-Discovery:
+26 paired concepts + 1 unpaired recon entry (SMB enum), spanning Credential
+Access, Privilege Escalation, Lateral Movement, Persistence, Execution, Defense
+Evasion, and Discovery — on-prem AD plus a growing Entra/M365 cloud slice:
 
 | Attack (red)                      | Detection (blue)                                      | ATT&CK    |
 | --------------------------------- | ----------------------------------------------------- | --------- |
@@ -112,6 +112,10 @@ Discovery:
 | WMI exec (impacket-wmiexec)       | `4688` `WmiPrvSE.exe` child shell                     | T1047     |
 | Scheduled-task persistence        | `4698` task created (suspicious action)               | T1053.005 |
 | WMI subscription persistence      | Sysmon `19`/`20`/`21` consumer/binding               | T1546.003 |
+| Silver Ticket (forged TGS)        | `4624` Kerberos logon, no `4769` _(soft)_            | T1558.002 |
+| DCShadow (rogue DC)               | `4742` `GC/` SPN write + `5137`/`4662`               | T1207     |
+| Illicit consent grant (Entra)     | Entra audit "Consent to application" _(KQL, cloud)_  | T1528     |
+| SP credential backdoor (Entra)    | Entra audit "Add SP credentials" _(KQL, cloud)_     | T1098.001 |
 
 Growth is mechanical now that the drift gate exists: author the red+blue entry
 pair, mark the matching flat blocks, then `gen-views.sh`. For **on-prem** pairs the

@@ -122,6 +122,28 @@ index=main EventCode IN (4768,4769) Account_Name!="*$"
 ```
 <!-- companion:end golden-ticket-4769 -->
 
+<!-- companion:gen silver-ticket-4769 -->
+**Detect Silver Ticket (Kerberos service logon with no 4769)**
+
+Detection posture: **soft** — a silver ticket's whole point is that it never
+touches the DC, so there is no `4769` to alert on directly. The realistic tell is
+the *absence*: a Kerberos network logon (`4624` type 3) landing on a service host
+for an account the DC issued no service ticket (`4769`) to in the window. The join
+key is `Account_Name` — `4769` is logged on the DC and `4624` on the member host,
+so source/host fields don't share values across the two. Set the search/alert
+**time range** to your ticket-renewal cadence (a few hours); the subsearch inherits
+it, so don't hard-code a window inside it. The durable backstop is enabling PAC
+validation, which rejects the forged ticket outright.
+
+```spl
+index=main EventCode=4624 Logon_Type=3 Authentication_Package_Name="Kerberos" Account_Name!="*$"
+| join type=left Account_Name
+    [ search index=main EventCode=4769 | stats count AS tgs_issued by Account_Name ]
+| where isnull(tgs_issued)
+| table _time, host, Account_Name, Source_Network_Address
+```
+<!-- companion:end silver-ticket-4769 -->
+
 <!-- companion:gen gpp-cpassword-5145 -->
 **Detect GPP cpassword hunt (5145 SYSVOL Groups.xml read)**
 
@@ -436,6 +458,28 @@ index=main EventCode=4624 Logon_Type=3 Account_Name="*$"
 | table _time, host, Account_Name, Source_Network_Address
 ```
 <!-- companion:end unconstrained-deleg-4624 -->
+
+<!-- companion:gen dcshadow-4742 -->
+**Detect DCShadow (rogue DC registration, 4742 GC SPN)**
+
+DCShadow has to make the directory believe a non-DC is a DC, and that leaves
+prints: a computer account gets a `GC/...` (global-catalog) service principal name
+added (`4742`), a server/`nTDSDSA` object is created under the Sites container
+(`5137`), and replication (`4662`) then originates from a host that is not a real
+DC. The SPN write is the cleanest invariant — alert on a `GC/` SPN appearing on
+any account that isn't an established domain controller. The `("DC1$","DC2$")`
+list below is a **placeholder** — replace it with your real DC computer-account
+inventory before relying on the rule.
+
+```spl
+index=main EventCode=4742 Service_Principal_Names="*GC/*"
+| search NOT Target_Account_Name IN ("DC1$","DC2$")
+| table _time, host, Account_Name, Target_Account_Name, Service_Principal_Names
+```
+
+Corroborate with `5137` creating an `nTDSDSA`/server object, and `4662` replication
+(`DS-Replication-Get-Changes`) sourced from a host outside your DC inventory.
+<!-- companion:end dcshadow-4742 -->
 
 <!-- companion:gen dpapi-backupkey-5145 -->
 **Detect DPAPI backup-key theft (protected_storage pipe, 5145)**
