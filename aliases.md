@@ -22,10 +22,10 @@ Core alias reference (modern CLI, git, safety nets).
 
 ### Clipboard
 
-| Alias | Expands To |
-|-------|------------|
-| `pbcopy` | `clip` |
-| `pbpaste` | `clip-paste` |
+| Alias | Expands To | Condition |
+|-------|-----------|----------|
+| `pbcopy` | `clip` | `clip` installed |
+| `pbpaste` | `clip-paste` | `clip-paste` installed |
 
 ### WSL2 Integration
 
@@ -37,19 +37,20 @@ Core alias reference (modern CLI, git, safety nets).
 
 ### Navigation
 
-| Alias | Expands To |
-|-------|------------|
-| `dotsync` | `cd ~/dotfiles-Kali` |
-| `opsignin` | `eval "$(op signin)"` (1Password CLI) |
-| `localip` | `ip -brief -4 addr show scope global` |
+| Alias | Expands To | Condition |
+|-------|-----------|----------|
+| `dotsync` | `cd "$HOME/dotfiles-Kali"` | always |
+| `opsignin` | `eval "$(op signin)"` | `op` CLI installed |
+| `localip` | `ip -brief -4 addr show scope global` | always |
 
 ---
 
 ## Offensive Layer
 
-All offensive aliases and functions live in `offensive/offensive.zsh` and are
-guarded by `HAVE_*` detection flags — they activate only when the tool is installed.
-Engagement data always lives in `~/engagements` (outside the repo).
+Aliases and functions live in `offensive/offensive.zsh`. Most tool shortcuts are
+guarded by `HAVE_*` detection flags and activate only when the tool is installed;
+a few (e.g. `hethttp`) are unguarded. Engagement data lives in `$ENGAGEMENTS_DIR`
+(defaults to `~/engagements`, kept outside the repo).
 
 ### Tool Shortcuts
 
@@ -61,7 +62,7 @@ Engagement data always lives in `~/engagements` (outside the repo).
 | `msf` | `msfconsole -q` | Metasploit |
 | `sliver` | `sliver-client` | Sliver C2 |
 | `seclists` | `cd "$SECLISTS_DIR"` | seclists dir present |
-| `hethttp` | `python3 -m http.server 8000` (serves CWD on :8000) | python3 |
+| `hethttp` | `echo "serving $(pwd) on :8000"; python3 -m http.server 8000` | python3 |
 
 ### Cheat Sheet Openers
 
@@ -81,8 +82,8 @@ Engagement data always lives in `~/engagements` (outside the repo).
 | `ttyup` | Print the TTY stabilisation sequence with attacker rows/cols pre-filled |
 | `cde` | `cd` to the active `$ENGAGEMENT` directory |
 | `rocks [query]` | Open ippsec.rocks search in browser (xdg-open / wslview / explorer.exe) |
-| `nmapsweep <target>` | `nmap -sCV -T4 -oA nmap/<target>` into `./nmap/` |
-| `bhce <dc> <user> <pass>` | BloodHound CE collection via `nxc ldap`, output to `loot/bloodhound/` |
+| `nmapsweep <target>` | `nmap -sCV -T4 -oA nmap/<target>` into `./nmap/` (`/` and `:` sanitized to `__`) |
+| `bhce <dc> <user> <pass\|:NThash> [domain]` | BloodHound CE collection via `nxc ldap`, output to `loot/bloodhound/` |
 | `mkengagement <name>` | Create dated engagement workspace — creates `scope.txt` first for ROE |
 | `eng` | fzf picker to jump between existing engagements; sets `$ENGAGEMENT` |
 | `logshell` | Record terminal session via `script` to `notes/session-<timestamp>.log` |
