@@ -18,9 +18,10 @@ org policy forbids user-managed keys. The org-policy constraint
 
 GCP Cloud Audit Logs telemetry (native Cloud Logging filter below; also queryable
 as Sentinel `GCPAuditLogs`), companion-only — `PURPLE-TEAM.md` is on-prem Windows.
+Triage each hit by `protoPayload.authenticationInfo.principalEmail` (the actor) and
+`protoPayload.resourceName` (the target SA).
 
 ```text
 logName=~"cloudaudit.googleapis.com%2Factivity"
 protoPayload.methodName="google.iam.admin.v1.CreateServiceAccountKey"
--- triage: protoPayload.authenticationInfo.principalEmail (actor), protoPayload.resourceName (target SA)
 ```

@@ -21,7 +21,8 @@ CloudTrail telemetry (Splunk `aws:cloudtrail` / Athena / Sentinel
 
 ```spl
 index=aws sourcetype=aws:cloudtrail eventName=CreateAccessKey
-| rename requestParameters.userName AS target_user, userIdentity.userName AS actor_user
+| rename requestParameters.userName AS target_user
+| eval actor_user=coalesce('userIdentity.userName','userIdentity.arn','userIdentity.principalId')
 | where isnotnull(target_user) AND target_user!=actor_user
 | table _time, actor_user, target_user, sourceIPAddress, userAgent
 ```

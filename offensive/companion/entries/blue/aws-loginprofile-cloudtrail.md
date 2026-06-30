@@ -20,6 +20,9 @@ CloudTrail telemetry, companion-only — `PURPLE-TEAM.md` is on-prem Windows.
 
 ```spl
 index=aws sourcetype=aws:cloudtrail eventName IN (CreateLoginProfile, UpdateLoginProfile)
-| rename requestParameters.userName AS target_user, userIdentity.userName AS actor_user
-| table _time, eventName, actor_user, target_user, sourceIPAddress
+| rename requestParameters.userName AS target_user
+| eval actor_user=coalesce('userIdentity.userName','userIdentity.arn','userIdentity.principalId')
+| eval cross_principal=if(target_user!=actor_user,"yes","no")
+| where eventName="CreateLoginProfile" OR cross_principal="yes"
+| table _time, eventName, actor_user, target_user, cross_principal, sourceIPAddress
 ```

@@ -18,8 +18,7 @@ lifetimes. Tune the window to your normal ticket-renewal cadence.
 
 ```spl
 index=main EventCode IN (4768,4769) Account_Name!="*$"
-| eval kind=if(EventCode==4768,"tgt","tgs")
-| stats count(eval(kind=="tgt")) AS tgts count(eval(kind=="tgs")) AS tgs_reqs
+| stats sum(eval(EventCode==4768)) AS tgts sum(eval(EventCode==4769)) AS tgs_reqs
     by Account_Name, Client_Address
 | where tgs_reqs > 0 AND tgts == 0
 ```
