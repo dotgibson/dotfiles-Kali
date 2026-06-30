@@ -55,7 +55,14 @@ command -v git >/dev/null 2>&1 || skip "check-companion-freshness: git unavailab
 
 # Read the recorded vendored commit from companion.lock (the O(1) offline provenance stamp
 # written by scripts/sync-companion.sh). Same field idiom that sync-companion.sh uses.
-[[ -r companion.lock ]] || skip "check-companion-freshness: no companion.lock (not a subtree checkout?)"
+# offensive/companion/ exists (asserted above), so this IS a subtree checkout — a
+# missing/unreadable companion.lock is a broken repo state, not "not a subtree", and
+# skipping it would silently disable the drift signal. Fail HARD (exit 1) instead.
+if [[ ! -r companion.lock ]]; then
+  printf '%s%s%s check-companion-freshness: offensive/companion/ present but companion.lock missing/unreadable — broken subtree state\n' \
+    "$c_r" "$UX_ERR" "$c_0" >&2
+  exit 1
+fi
 SPLIT="$(sed -n 's/^companion_sha=//p' companion.lock | head -n1)"
 # A present-but-malformed lock would make the TIP-vs-SPLIT compare below report a false
 # "behind". This is a real misconfiguration, not drift, so fail HARD (exit 1) with a
@@ -85,7 +92,9 @@ refs/*) ref="$BRANCH" ;;
 esac
 # The upstream tip we'd be pulling. ls-remote needs no clone; GIT_TERMINAL_PROMPT=0 keeps it
 # non-interactive (never block a scheduled run waiting on a credential prompt).
-TIP="$(GIT_TERMINAL_PROMPT=0 git ls-remote "$UPSTREAM" "$ref" 2>/dev/null | awk 'NR==1{print $1}')"
+# `--` forces end-of-options: UPSTREAM is overridable (COMPANION_UPSTREAM), and
+# ls-remote would treat a leading-dash value as an option (option-injection guard).
+TIP="$(GIT_TERMINAL_PROMPT=0 git ls-remote -- "$UPSTREAM" "$ref" 2>/dev/null | awk 'NR==1{print $1}')"
 [[ -n "$TIP" ]] || skip "check-companion-freshness: cannot reach $UPSTREAM ($BRANCH) — offline/restricted?"
 
 if [[ "$TIP" == "$SPLIT" ]]; then
