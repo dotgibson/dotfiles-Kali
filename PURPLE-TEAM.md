@@ -104,6 +104,40 @@ index=main EventCode=4769 Service_Name!="*$" Service_Name!="krbtgt"
 ```
 <!-- companion:end kerberoasting-4769 -->
 
+<!-- companion:gen golden-ticket-4769 -->
+**Detect Golden Ticket (4769 with no preceding 4768)**
+
+A forged TGT is minted offline, so the account uses Kerberos services (`4769` TGS
+requests) without the DC ever issuing it a TGT (`4768`). Per account+host window,
+a principal with TGS activity but zero TGT issuance is the invariant. Secondary
+tells back it up: RC4 (`0x17`) when the realm is otherwise AES, and absurd ticket
+lifetimes. Tune the window to your normal ticket-renewal cadence.
+
+```spl
+index=main EventCode IN (4768,4769) Account_Name!="*$"
+| eval kind=if(EventCode==4768,"tgt","tgs")
+| stats count(eval(kind=="tgt")) AS tgts count(eval(kind=="tgs")) AS tgs_reqs
+    by Account_Name, Client_Address
+| where tgs_reqs > 0 AND tgts == 0
+```
+<!-- companion:end golden-ticket-4769 -->
+
+<!-- companion:gen gpp-cpassword-5145 -->
+**Detect GPP cpassword hunt (5145 SYSVOL Groups.xml read)**
+
+The decrypt is offline, so the only on-wire moment is reading the GPP XML out of
+SYSVOL — a `5145` detailed-file-share-access event on the `SYSVOL` share whose
+relative target ends in a credential-bearing GPP file. Group Policy clients read
+these too, so scope to *interactive* accounts (not `*$` machine accounts).
+Honey-policy a fake `Groups.xml` for a near-zero-false-positive tripwire.
+
+```spl
+index=main EventCode=5145 Share_Name="*SYSVOL*" Account_Name!="*$"
+| regex Relative_Target_Name="(?i)(Groups|Services|ScheduledTasks|Printers|DataSources)\.xml$"
+| table _time, host, Account_Name, Source_Address, Relative_Target_Name
+```
+<!-- companion:end gpp-cpassword-5145 -->
+
 **LDAP recon by one principal** — explicit-cred logons `4648` fanning out:
 ```spl
 index=main EventCode=4648 Network_Address!="-"
@@ -202,6 +236,40 @@ extended right `1131f6ad-9c07-11d1-f79f-00c04fc2dcd2` requested by anything that
 isn't a domain controller.
 <!-- companion:end dcsync-4662 -->
 
+<!-- companion:gen ntds-ntdsutil-4688 -->
+**Detect NTDS theft via ntdsutil/VSS (4688 + 8222)**
+
+Copying NTDS.dit avoids the replication right (`4662`), so detect on host
+behavior instead: on a domain controller, `ntdsutil` with an `ifm`/`create full`
+argument, or `vssadmin`/`diskshadow`/`wbadmin` creating a shadow copy (`4688`).
+Corroborate with the `8222` shadow-copy-created event. Almost nothing legitimately
+runs `ntdsutil ... ifm` outside a planned DC backup or migration — allowlist
+those windows and alert on the rest.
+
+```spl
+index=main EventCode=4688
+| regex Process_Command_Line="(?i)(ntdsutil.*(ifm|create\s+full)|vssadmin\s+create\s+shadow|diskshadow|wbadmin\s+start\s+backup)"
+| table _time, host, Account_Name, New_Process_Name, Process_Command_Line
+```
+<!-- companion:end ntds-ntdsutil-4688 -->
+
+<!-- companion:gen wmiexec-4688 -->
+**Detect WMI exec (4688 WmiPrvSE child process)**
+
+WMI execution drops no service (`7045`) to catch, but the payload runs as a child
+of `WmiPrvSE.exe`. A `4688` whose creator is `WmiPrvSE.exe` spawning
+`cmd.exe`/`powershell.exe` is the signal — especially with impacket-wmiexec's
+`cmd.exe /Q /c ... 1> \\127.0.0.1\ADMIN$\...` output-redirect shape. Legitimate
+WMI providers spawn children too, so pair the parent with a shell target and the
+SMB output-redirect string.
+
+```spl
+index=main EventCode=4688 Creator_Process_Name="*\\WmiPrvSE.exe"
+    New_Process_Name IN ("*\\cmd.exe","*\\powershell.exe")
+| table _time, host, Account_Name, Creator_Process_Name, New_Process_Name, Process_Command_Line
+```
+<!-- companion:end wmiexec-4688 -->
+
 ### Execution, persistence, AD CS
 
 **LOLBAS execution** — `4688` process creation, regex on known abuse shapes:
@@ -263,6 +331,44 @@ index=main EventCode IN (4720,4722)
 | eval Creator=mvindex(Account_Name,0), NewAccount=mvindex(Account_Name,1)
 | table _time, host, Creator, NewAccount
 ```
+
+<!-- companion:gen schtask-4698 -->
+**Detect scheduled-task persistence (4698 task created)**
+
+Task creation writes `4698` with the full task XML in the event. Detect on the
+action, not the name: a task whose command runs encoded/hidden PowerShell, a
+LOLBin, or something from a user-writable/temp path. Baseline your software's
+legit tasks and alert on the rest; `4702` (task updated) catches the
+modify-an-existing-task variant. (Needs the Object Access > Other Object Access
+audit subcategory enabled.)
+
+```spl
+index=main EventCode=4698
+| regex Task_Content="(?i)(-enc\b|-w\s+hidden|FromBase64|\\\\Users\\\\|\\\\Temp\\\\|mshta|regsvr32|rundll32|powershell.*(http|iex))"
+| table _time, host, Subject_Account_Name, Task_Name, Task_Content
+```
+<!-- companion:end schtask-4698 -->
+
+<!-- companion:gen wmi-subscription-sysmon -->
+**Detect WMI subscription persistence (Sysmon 20 consumer)**
+
+The Security log barely sees this; Sysmon does. The WMI-eventing family is Sysmon
+`19` (WmiFilter), `20` (WmiConsumer), `21` (WmiBinding). The command lives in the
+consumer, so this query keys on event `20` and matches its `Destination` — a
+`CommandLineEventConsumer` running PowerShell/cmd/a LOLBin is the high-fidelity
+tell. The binding (`21`) and filter (`19`) carry no command, so don't fold them
+into this `Destination` regex; instead treat **any** new `21`
+(`__FilterToConsumerBinding`) as its own cheap, low-volume alert. Legitimate
+permanent consumers are rare and usually from known management software, so
+allowlist those and alert on the rest. Requires Sysmon with WMI eventing
+(schema ≥ 4.1).
+
+```spl
+index=main EventCode=20
+| regex Destination="(?i)(powershell|cmd\.exe|mshta|wscript|cscript|rundll32|-enc|FromBase64)"
+| table _time, host, User, Name, Type, Destination, Query
+```
+<!-- companion:end wmi-subscription-sysmon -->
 
 <!-- companion:gen adcs-esc1-4886 -->
 **Detect AD CS SAN abuse (4886 ESC1/relay)**
