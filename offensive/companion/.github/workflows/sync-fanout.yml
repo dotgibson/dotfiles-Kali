@@ -1,0 +1,330 @@
+# .github/workflows/sync-fanout.yml
+# ──────────────────────────────────────────────────────────────────────────────
+# AUTOMATED FAN-OUT — re-sync the vendored companion into dotfiles-Kali on release.
+#
+# htpx is the source of truth for the red<->blue paired corpus. dotfiles-Kali
+# vendors it at offensive/companion/ via `git subtree`, with provenance pinned in
+# Kali's `companion.lock`. Re-syncing that was a MANUAL `scripts/sync-companion.sh`
+# a human had to remember to run after every htpx change. This workflow closes that
+# last mile: when auto-tag.yml publishes a vX.Y.Z release here, this clones Kali,
+# runs Kali's OWN scripts/sync-companion.sh to pull the released htpx into
+# offensive/companion/ + bump companion.lock, regenerates the dependent flat views,
+# and opens a PR against dotfiles-Kali.
+#
+# IT OPENS A PR, IT NEVER MERGES. A human reviews and merges; the bot only removes
+# the typing, not the judgement. (Kali's own CI — companion.yml's gen-views --check
+# drift gate — still runs on the PR as a second backstop.)
+#
+# ── THE GUARANTEE THAT MATTERS: NEVER TOUCHES core.lock ─────────────────────────
+# dotfiles-Kali vendors TWO independent things from TWO different upstreams, pinned
+# in TWO different lock files:
+#   • Core            → core.lock        (synced by dotfiles-core's own fan-out)
+#   • this companion  → companion.lock   (synced by THIS workflow)
+# This workflow runs ONLY Kali's scripts/sync-companion.sh, which touches ONLY the
+# offensive/companion/** subtree + companion.lock (plus the flat views gen-views.sh
+# regenerates). It never invokes sync-core.sh, never reads or writes core.lock, and
+# never changes Kali's vendored Core version. htpx releases and Core releases are
+# independent vendored dependencies that update DIFFERENT lock files, so they can
+# never collide. A post-condition check below asserts companion.lock advanced and
+# core.lock did NOT before any PR is opened.
+#
+# ── PINNED TO THE RELEASED REF ──────────────────────────────────────────────────
+# At release time the tag == the main tip (auto-tag.yml tags the just-pushed HEAD of
+# main). Kali's sync-companion.sh pulls a BRANCH tip (git subtree pull <remote>
+# <branch>), so we pass it htpx's `main` — which, at this instant, IS the released
+# commit. companion.lock records the resulting git-subtree-split sha. (sync-companion
+# pulls the branch, not an arbitrary tag/sha; that's acceptable precisely because
+# tag == main tip here. A backfill via workflow_dispatch carries the same caveat.)
+#
+# ── AUTH ────────────────────────────────────────────────────────────────────────
+# The built-in GITHUB_TOKEN is scoped to htpx only — it CANNOT push a branch or open
+# a PR in dotfiles-Kali. This needs a FLEET_SYNC_TOKEN secret on THIS repo: a
+# fine-grained PAT (or GitHub App installation token) with `contents:write` +
+# `pull-requests:write` on dotfiles-Kali. The preflight step fails loudly with setup
+# instructions if it's absent.
+#
+# ── WHY workflow_run, NOT release: published ────────────────────────────────────
+# A Release created by the built-in GITHUB_TOKEN (as auto-tag.yml does) does NOT emit
+# a `release` event — that recursion guard would make a `release:` trigger never
+# fire. workflow_run has no such block: it fires when auto-tag.yml completes, and we
+# resolve the tag from the released commit. (workflow_run + workflow_dispatch only
+# take effect once this file is on the default branch — GitHub reads both from main,
+# never from a feature branch. After merge, dry-run via "Run workflow" with a past
+# tag before relying on it.)
+# ──────────────────────────────────────────────────────────────────────────────
+name: sync-fanout
+
+on:
+  # Fires after auto-tag.yml finishes. We then resolve the vX.Y.Z tag that the run's
+  # head commit carries (auto-tag tags HEAD of main during its run).
+  workflow_run:
+    workflows: ["auto-tag"]
+    types: [completed]
+  # Manual re-run / backfill: fan out an arbitrary released tag by hand.
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: "Released htpx tag to fan out to dotfiles-Kali (vX.Y.Z)"
+        required: true
+
+# Only the default token is requested (read access to check out htpx). All cross-repo
+# writes go through FLEET_SYNC_TOKEN, never the workflow token.
+permissions:
+  contents: read
+
+# Never run two fan-outs at once (a second release mid-fan-out would race the clone
+# and PR); do NOT cancel an in-flight run — let a fan-out finish.
+concurrency:
+  group: sync-fanout
+  cancel-in-progress: false
+
+jobs:
+  fanout:
+    # First-party only, and on the workflow_run path only when auto-tag actually
+    # succeeded (a failed/cancelled tag run must not fan a half-baked release out).
+    if: >-
+      github.repository_owner == 'Gerrrt' &&
+      (github.event_name == 'workflow_dispatch' ||
+       github.event.workflow_run.conclusion == 'success')
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      # ── RESOLVE FIRST, CHECK OUT SECOND ──────────────────────────────────────
+      # Resolve (and validate) the released tag BEFORE any `actions/checkout`. A
+      # mistyped / missing-`v` workflow_dispatch input must be a CLEAN no-op, not a
+      # hard checkout failure: if we checked out `inputs.tag` raw, a bad input would
+      # blow up `actions/checkout` before this step could mark it skip=true.
+      #
+      # This step does its own minimal, unauthenticated work to determine the tag:
+      #   • workflow_run — clone htpx at the triggering run's head_sha and read the
+      #     vX.Y.Z tag pointing at HEAD (that commit is the one auto-tag.yml tagged);
+      #   • workflow_dispatch — take the input verbatim, validate it is a clean
+      #     vX.Y.Z, AND verify the tag actually EXISTS on origin (git ls-remote).
+      # Anything that isn't a clean, existing release tag → skip=true + ::notice::.
+      - name: Resolve release tag
+        id: resolve
+        env:
+          EVENT: ${{ github.event_name }}
+          INPUT_TAG: ${{ github.event.inputs.tag }}
+          HEAD_SHA: ${{ github.event.workflow_run.head_sha }}
+          OWNER: ${{ github.repository_owner }}
+          REPO: ${{ github.event.repository.name }}
+          # htpx is PRIVATE, so the git clone / ls-remote below would otherwise prompt
+          # for a username and die in CI ("could not read Username for github.com").
+          # Authenticate reads of THIS repo with the built-in GITHUB_TOKEN (scoped to
+          # htpx, contents:read — see `permissions` above; NOT FLEET_SYNC_TOKEN, which
+          # is reserved for the cross-repo writes to dotfiles-Kali later).
+          #
+          # The auth is injected as an `url.insteadOf` rewrite via GIT_CONFIG_COUNT/
+          # KEY/VALUE rather than `git config --global`, so the token is NEVER written
+          # to ~/.gitconfig on disk. These env vars are scoped to THIS step only, so
+          # there's nothing to clean up and nothing that can shadow the next step's
+          # actions/checkout auth.
+          GIT_CONFIG_COUNT: "1"
+          GIT_CONFIG_KEY_0: "url.https://x-access-token:${{ github.token }}@github.com/.insteadOf"
+          GIT_CONFIG_VALUE_0: "https://github.com/"
+        run: |
+          set -euo pipefail
+          if [ "$EVENT" = workflow_dispatch ]; then
+            tag="${INPUT_TAG:-}"
+          else
+            # The vX.Y.Z tag pointing at the commit auto-tag.yml just tagged. Clone
+            # htpx at that head_sha (full history + tags) and read the tag locally. A
+            # read loop (not `| head`) avoids the pipefail/SIGPIPE race under pipefail.
+            git clone --no-checkout "https://github.com/${OWNER}/${REPO}.git" _resolve
+            git -C _resolve fetch --tags origin
+            tag=""
+            while IFS= read -r t; do
+              case "$t" in
+                v[0-9]*.[0-9]*.[0-9]*) tag="$t"; break ;;
+              esac
+            done < <(git -C _resolve tag --points-at "$HEAD_SHA")
+            rm -rf _resolve
+          fi
+          ver="${tag#v}"
+          if ! printf '%s' "$ver" | grep -qE '^[0-9]+\.[0-9]+\.[0-9]+$'; then
+            echo "::notice::'$tag' is not a clean vX.Y.Z release tag — nothing to fan out"
+            echo "skip=true" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          # The tag string is well-formed — now confirm it actually EXISTS in the repo.
+          # On dispatch a real-but-typo'd input (e.g. a never-cut version) would
+          # otherwise sail past validation into a confusing downstream failure.
+          if [ -z "$(git ls-remote --tags "https://github.com/${OWNER}/${REPO}.git" "refs/tags/$tag")" ]; then
+            echo "::notice::tag '$tag' does not exist in ${OWNER}/${REPO} — nothing to fan out"
+            echo "skip=true" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          echo "tag=$tag" >> "$GITHUB_OUTPUT"
+          echo "skip=false" >> "$GITHUB_OUTPUT"
+          echo ":: will fan out htpx $tag to dotfiles-Kali"
+
+      # htpx is checked out at the VALIDATED tag (resolve proved it is a clean,
+      # existing vX.Y.Z). Skipped on a no-op resolve so a bad dispatch input never
+      # reaches checkout. Full history so git subtree downstream has what it needs.
+      - name: Check out htpx at the released tag
+        if: steps.resolve.outputs.skip != 'true'
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ steps.resolve.outputs.tag }}
+          fetch-depth: 0
+          path: htpx
+
+      # Fail early and legibly if the cross-repo token is missing — otherwise the
+      # first clone/push would fail with an opaque 403.
+      - name: Preflight — FLEET_SYNC_TOKEN present
+        if: steps.resolve.outputs.skip != 'true'
+        env:
+          FLEET_SYNC_TOKEN: ${{ secrets.FLEET_SYNC_TOKEN }}
+        run: |
+          set -euo pipefail
+          if [ -z "${FLEET_SYNC_TOKEN:-}" ]; then
+            echo "::error::FLEET_SYNC_TOKEN secret is not set."
+            echo "::error::This workflow pushes a sync branch and opens a PR in dotfiles-Kali,"
+            echo "::error::which the built-in GITHUB_TOKEN cannot reach. Create a fine-grained"
+            echo "::error::PAT or GitHub App token with contents:write + pull-requests:write on"
+            echo "::error::dotfiles-Kali and save it as the FLEET_SYNC_TOKEN secret on htpx."
+            exit 1
+          fi
+
+      - name: Sync companion into dotfiles-Kali and open a PR
+        if: steps.resolve.outputs.skip != 'true'
+        env:
+          GH_TOKEN: ${{ secrets.FLEET_SYNC_TOKEN }}
+          OWNER: ${{ github.repository_owner }}
+          TAG: ${{ steps.resolve.outputs.tag }}
+          # Git auth + bot identity injected via STEP-SCOPED GIT_CONFIG_* (not `git
+          # config --global`), so no token is ever written to ~/.gitconfig and the
+          # scoping dies with this step — same approach as the Resolve step.
+          #   KEY_0: default github.com -> FLEET (the Kali clone, sync-branch push, PR).
+          #   KEY_1: a more-specific, .git-ANCHORED rule so htpx is read with the
+          #     built-in token (git uses the LONGEST match). Anchored to the full `.git`
+          #     URL so it can't also rewrite a same-prefix repo like `<owner>/htpx-tools`.
+          #     => FLEET_SYNC_TOKEN never needs htpx access.
+          #   KEY_2/3: the bot commit identity for the gen-views regenerate commit.
+          GIT_CONFIG_COUNT: "4"
+          GIT_CONFIG_KEY_0: "url.https://x-access-token:${{ secrets.FLEET_SYNC_TOKEN }}@github.com/.insteadOf"
+          GIT_CONFIG_VALUE_0: "https://github.com/"
+          GIT_CONFIG_KEY_1: "url.https://x-access-token:${{ github.token }}@github.com/${{ github.repository }}.git.insteadOf"
+          GIT_CONFIG_VALUE_1: "https://github.com/${{ github.repository }}.git"
+          GIT_CONFIG_KEY_2: "user.name"
+          GIT_CONFIG_VALUE_2: "htpx sync bot"
+          GIT_CONFIG_KEY_3: "user.email"
+          GIT_CONFIG_VALUE_3: "41898282+github-actions[bot]@users.noreply.github.com"
+        run: |
+          set -euo pipefail
+          kali="$GITHUB_WORKSPACE/dotfiles-Kali"
+          branch="sync/companion-${TAG}"
+          echo ":: fanning out htpx $TAG to dotfiles-Kali on branch $branch"
+
+          # Clone Kali and start the sync branch from its default tip.
+          git clone "https://github.com/${OWNER}/dotfiles-Kali.git" "$kali"
+          default="$(git -C "$kali" symbolic-ref --short refs/remotes/origin/HEAD | sed 's#^origin/##')"
+          git -C "$kali" checkout -B "$branch" "origin/${default}"
+
+          # Snapshot BOTH lock files BEFORE the sync, so the post-condition can prove
+          # companion.lock advanced and core.lock did NOT (the never-touch-core.lock
+          # guarantee, asserted not just asserted-in-prose).
+          comp_before="$(grep -E '^companion_sha=' "$kali/companion.lock" | cut -d= -f2 || true)"
+          core_before="$(grep -E '^core_sha=' "$kali/core.lock" 2>/dev/null | cut -d= -f2 || true)"
+
+          # Run KALI'S OWN consumer-side sync script inside the clone. It does the
+          # `git subtree pull --squash` of htpx + bumps companion.lock — and ONLY that;
+          # it never touches core.lock. Called with NO argument on purpose: the script
+          # derives BOTH the remote (https://github.com/<owner>/htpx.git) AND the branch
+          # (main) from companion.lock. Its positional arg is the REMOTE, not a branch —
+          # passing "main" there made it try to pull from a remote named "main". At
+          # release time htpx main == the released commit, so companion.lock pins the
+          # released sha (per the header's "pinned to the released ref" note).
+          git config --global --add safe.directory "$kali"
+          "$kali/scripts/sync-companion.sh"
+
+          # Generated flat views (PURPLE-TEAM.md, offensive/hacktheplanet) live in KALI,
+          # outside the subtree. An htpx entry change can shift their generated blocks,
+          # which sync-companion.sh does NOT touch. Regenerate so the PR is internally
+          # consistent (and Kali's companion.yml --check gate stays green on the PR).
+          # A gen-views FAILURE must ABORT this sync — NOT be swallowed. If view
+          # regeneration fails we must not commit/open a PR: the half-regenerated
+          # tree would just fail Kali's companion.yml drift gate downstream, turning
+          # a clear local error into a confusing PR-CI failure. Fail loud here.
+          if [ -x "$kali/offensive/companion/gen-views.sh" ]; then
+            if ! ( cd "$kali" && ./offensive/companion/gen-views.sh ); then
+              echo "::error::gen-views.sh failed in dotfiles-Kali — refusing to commit or open a PR for htpx ${TAG}"
+              { echo "### ❌ htpx fan-out → ${TAG} ABORTED"; echo;
+                echo "- \`gen-views.sh\` failed to regenerate the flat views; no PR opened."; } >> "$GITHUB_STEP_SUMMARY"
+              exit 1
+            fi
+            git -C "$kali" add -A
+            if ! git -C "$kali" diff --cached --quiet; then
+              git -C "$kali" commit -m "chore(companion): regenerate flat views for htpx ${TAG}"
+            fi
+          fi
+
+          comp_after="$(grep -E '^companion_sha=' "$kali/companion.lock" | cut -d= -f2 || true)"
+          core_after="$(grep -E '^core_sha=' "$kali/core.lock" 2>/dev/null | cut -d= -f2 || true)"
+          ahead="$(git -C "$kali" rev-list --count "origin/${default}..HEAD" 2>/dev/null || echo 0)"
+
+          summary="$RUNNER_TEMP/summary.md"; : > "$summary"
+
+          # ── Post-condition: core.lock MUST be untouched — ANY diff, not just the
+          # core_sha value. A formatting or other-field change to core.lock would
+          # slip past a core_sha-only check, so compare the WHOLE file against the
+          # base branch (the committed tree on this sync branch vs origin/$default).
+          # Hard fail (no PR) if core.lock changed in any way. ──
+          if ! git -C "$kali" diff --quiet "origin/${default}" -- core.lock; then
+            echo "::error::core.lock differs from origin/${default} ($core_before -> $core_after) — this fan-out must NEVER touch Core. Aborting."
+            { echo "### ❌ htpx fan-out → ${TAG} ABORTED"; echo;
+              echo "- \`core.lock\` changed vs \`origin/${default}\` (\`$core_before\` -> \`$core_after\`) — companion sync must never touch Core (ANY diff fails this gate)."; } >> "$GITHUB_STEP_SUMMARY"
+            exit 1
+          fi
+
+          # ── Nothing to do: companion.lock unchanged and no new commits. ──
+          if [ "$ahead" -eq 0 ]; then
+            echo "- ✅ \`dotfiles-Kali\` already at htpx \`${TAG}\` (companion_sha \`${comp_after:0:12}\`) — no PR needed" >> "$summary"
+            { echo "### htpx fan-out → ${TAG}"; echo; cat "$summary"; } >> "$GITHUB_STEP_SUMMARY"
+            exit 0
+          fi
+
+          # ── Post-condition: companion.lock MUST have advanced. ──
+          if [ "$comp_before" = "$comp_after" ]; then
+            echo "::error::companion.lock did not advance (\`$comp_before\`) yet the tree changed — refusing to open a PR"
+            { echo "### ❌ htpx fan-out → ${TAG}"; echo;
+              echo "- companion.lock did not advance — unexpected; not opening a PR."; } >> "$GITHUB_STEP_SUMMARY"
+            exit 1
+          fi
+
+          # Push the branch.
+          git -C "$kali" push --force-with-lease origin "HEAD:${branch}"
+
+          # Build the PR body line-by-line (printf, not a heredoc — an indented
+          # heredoc terminator inside a YAML run-block would not close the doc).
+          body="$RUNNER_TEMP/pr-body.md"; : > "$body"
+          {
+            printf 'Automated companion fan-out from `Gerrrt/htpx` **%s**.\n\n' "$TAG"
+            printf 'Re-syncs the vendored `offensive/companion/` subtree to htpx %s via\n' "$TAG"
+            printf '`scripts/sync-companion.sh` and bumps `companion.lock`:\n\n'
+            printf '`companion_sha`: `%s` -> `%s`\n\n' "${comp_before:0:12}" "${comp_after:0:12}"
+            printf '**This PR bumps `companion.lock` ONLY -- it does NOT touch `core.lock` or\n'
+            printf 'the vendored Core version.** The companion (htpx) and Core are independent\n'
+            printf 'vendored dependencies pinned in different lock files; a CI post-condition\n'
+            printf 'verified `core.lock` was unchanged before this PR was opened.\n\n'
+            printf 'Any generated flat-view blocks (`PURPLE-TEAM.md`, `offensive/hacktheplanet`)\n'
+            printf 'were regenerated with `gen-views.sh`. Kali'"'"'s `companion.yml` drift gate\n'
+            printf 'runs on this PR as a backstop.\n\n'
+            printf 'Opened by htpx'"'"'s `sync-fanout` workflow. **Review the diff before merging.**\n'
+          } > "$body"
+
+          open="$(gh pr list --repo "${OWNER}/dotfiles-Kali" --head "$branch" --state open --json url --jq 'length')"
+          if [ "${open:-0}" != 0 ]; then
+            url="$(gh pr list --repo "${OWNER}/dotfiles-Kali" --head "$branch" --state open --json url --jq '.[0].url')"
+            echo "- 🔁 PR already open — pushed update: $url" >> "$summary"
+          else
+            url="$(gh pr create --repo "${OWNER}/dotfiles-Kali" --base "$default" --head "$branch" \
+              --title "chore(companion): sync htpx → ${TAG}" \
+              --body-file "$body")"
+            echo "- 🚀 PR opened: $url" >> "$summary"
+          fi
+
+          { echo "### htpx fan-out → ${TAG}"; echo;
+            echo "companion_sha \`${comp_before:0:12}\` → \`${comp_after:0:12}\` (core.lock untouched)"; echo;
+            cat "$summary"; } >> "$GITHUB_STEP_SUMMARY"

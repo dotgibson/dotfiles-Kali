@@ -12,8 +12,8 @@ jobs:
       - name: shellcheck + syntax
         run: |
           sudo apt-get update -qq && sudo apt-get install -y -qq shellcheck
-          shellcheck -S warning htpx gen-views.sh install.sh
-          bash -n htpx gen-views.sh install.sh
+          shellcheck -S warning htpx gen-views.sh install.sh scripts/auto-tag.sh
+          bash -n htpx gen-views.sh install.sh scripts/auto-tag.sh
       - name: drift gate (standalone — no flat-view targets)
         run: ./gen-views.sh --check
       - name: pairing graph + slot coverage
