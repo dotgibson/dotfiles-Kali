@@ -84,10 +84,10 @@ No mainstream tool ships attacks paired with the telemetry they trip.
 
 ## Corpus
 
-32 paired concepts + 1 unpaired recon entry (SMB enum), spanning Credential
+35 paired concepts + 1 unpaired recon entry (SMB enum), spanning Credential
 Access, Privilege Escalation, Lateral Movement, Persistence, Execution, Defense
 Evasion, and Discovery — on-prem AD, a multi-cloud slice (Entra/M365, AWS, GCP),
-and Kubernetes:
+Kubernetes, and Okta:
 
 | Attack (red)                      | Detection (blue)                                      | ATT&CK    |
 | --------------------------------- | ----------------------------------------------------- | --------- |
@@ -120,6 +120,9 @@ and Kubernetes:
 | Privileged pod → node escape (K8s) | audit: privileged/hostPID/hostPath pod create       | T1610/T1611 |
 | Pod exec / attach (K8s)           | audit: `pods/exec` subresource create                | T1609     |
 | Cluster-admin binding (K8s)       | audit: roleRef `cluster-admin` binding               | T1098     |
+| MFA reset → takeover (Okta)       | System Log `user.mfa.factor.reset_all`               | T1556.006 |
+| API token persistence (Okta)      | System Log `system.api_token.create`                 | T1098     |
+| Rogue IdP backdoor (Okta)         | System Log `system.idp.lifecycle.create`             | T1556     |
 | IAM access-key backdoor (AWS)     | CloudTrail `CreateAccessKey` actor≠target _(cloud)_  | T1098.001 |
 | Console takeover (AWS)            | CloudTrail Create/UpdateLoginProfile _(cloud)_       | T1098     |
 | SA key creation (GCP)            | Cloud Audit `CreateServiceAccountKey` _(cloud)_      | T1098.001 |
