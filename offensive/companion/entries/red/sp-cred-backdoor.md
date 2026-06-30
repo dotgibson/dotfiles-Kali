@@ -11,8 +11,9 @@ source: Mandiant / dirkjanm, Entra service-principal abuse
 pair: sp-cred-auditlogs
 ---
 
-With rights over an app registration / service principal (`Application.ReadWrite`,
-or a compromised privileged role), add your *own* client secret or certificate to
+With rights over an app registration / service principal
+(`Application.ReadWrite.All`, or a compromised privileged role), add your *own*
+client secret or certificate to
 an existing privileged app. You then authenticate **as that app** —
 non-interactive, no MFA, surviving user password resets: a durable cloud backdoor
 that blends into normal app traffic. (Cloud — no on-host target, so no slots.)

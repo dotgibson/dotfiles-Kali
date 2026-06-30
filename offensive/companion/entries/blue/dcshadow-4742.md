@@ -15,7 +15,9 @@ prints: a computer account gets a `GC/...` (global-catalog) service principal na
 added (`4742`), a server/`nTDSDSA` object is created under the Sites container
 (`5137`), and replication (`4662`) then originates from a host that is not a real
 DC. The SPN write is the cleanest invariant — alert on a `GC/` SPN appearing on
-any account that isn't an established domain controller.
+any account that isn't an established domain controller. The `("DC1$","DC2$")`
+list below is a **placeholder** — replace it with your real DC computer-account
+inventory before relying on the rule.
 
 ```spl
 index=main EventCode=4742 Service_Principal_Names="*GC/*"
