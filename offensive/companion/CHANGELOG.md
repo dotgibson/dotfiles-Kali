@@ -20,21 +20,23 @@ GitHub Release; `sync-fanout.yml` then opens the Kali sync PR.
 
 ## [Unreleased]
 
+## [v1.4.0] - 2026-06-30
+
 ### Fixed
 
-- `sync-fanout.yml` Sync step: call Kali's `sync-companion.sh` with NO argument. It
-  was passed `main` as a positional, but that arg is the REMOTE (URL), not a branch —
-  so it tried to pull from a remote named `main` (`fatal: 'main' does not appear to
-  be a git repository`). The script derives both the htpx remote and the branch
-  (`main`) from `companion.lock` itself.
+- `sync-fanout.yml` Sync step: call Kali's `sync-companion.sh` with NO argument.
+  It was passed `main` as a positional, but that arg is the REMOTE (URL), not a
+  branch so it tried to pull from a remote named `main` (`fatal: 'main' does
+not appear to be a git repository`). The script derives both the htpx remote
+  and the branch (`main`) from `companion.lock` itself.
 - `sync-fanout.yml` auth: the Sync step now injects all git auth + the bot identity
   via step-scoped `GIT_CONFIG_COUNT`/`KEY`/`VALUE` instead of `git config --global`
-  (no token written to `~/.gitconfig`; consistent with the Resolve step). htpx is read
-  with the built-in `GITHUB_TOKEN` via a more-specific, `.git`-anchored `url.insteadOf`
-  (longest match wins, and the anchor avoids rewriting same-prefix repos like
-  `<owner>/htpx-tools`), so the `git subtree pull` works without `FLEET_SYNC_TOKEN`
-  ever needing htpx access; `FLEET_SYNC_TOKEN` stays scoped to the dotfiles-Kali
-  clone/push/PR.
+  (no token written to `~/.gitconfig`; consistent with the Resolve step).
+  htpx is read with the built-in `GITHUB_TOKEN` via a more-specific,
+  `.git`-anchored `url.insteadOf` (longest match wins, and the anchor avoids
+  rewriting same-prefix repos like `<owner>/htpx-tools`), so the
+  `git subtree pull` works without `FLEET_SYNC_TOKEN` ever needing htpx access;
+  `FLEET_SYNC_TOKEN` stays scoped to the dotfiles-Kali clone/push/PR.
 
 ## [v1.3.0] - 2026-06-30
 
@@ -60,8 +62,9 @@ GitHub Release; `sync-fanout.yml` then opens the Kali sync PR.
 ### Added
 
 - Release automation: `auto-tag.yml` tags + releases on a new top CHANGELOG
-  version, and `sync-fanout.yml` fans the released ref out to `dotfiles-Kali` as a
-  `companion.lock`-bump PR (this CHANGELOG seeds that pipeline at the current tag).
+  version, and `sync-fanout.yml` fans the released ref out to `dotfiles-Kali`
+  as a `companion.lock`-bump PR this CHANGELOG seeds that pipeline at the
+  current tag.
 
 ## [v1.1.0]
 
