@@ -1,10 +1,10 @@
 # GENERATED — vendored companion provenance. offensive/companion/ is a git subtree
-# of Gerrrt/htpx (the standalone red<->blue pentest companion). Do NOT hand-edit the
+# of dotgibson/htpx (the standalone red<->blue pentest companion). Do NOT hand-edit the
 # vendored tree; edit upstream in htpx, then sync. Easiest:
 #   scripts/sync-companion.sh          # pulls htpx main + bumps companion_sha below
 # or by hand:
 #   git subtree pull --prefix=offensive/companion <htpx-remote> main --squash
 # and update companion_sha below to the new git-subtree-split commit.
-companion_repo=Gerrrt/htpx
+companion_repo=dotgibson/htpx
 companion_branch=main
 companion_sha=ce75aefc0aba670d63677d12d93ff9815fa08b6c

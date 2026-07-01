@@ -11,7 +11,7 @@ behind hunting it. Field notes from TrustedSec's *Actionable Purple Teaming*
 > `hacktheplanet` has a telemetry footprint — knowing it is OPSEC, and validating
 > it is the entire point of purple teaming.
 
-> **Defender-authored capability lives across the fence in [`dotfiles-Defense`](https://github.com/Gerrrt/dotfiles-Defense).**
+> **Defender-authored capability lives across the fence in [`dotfiles-Defense`](https://github.com/dotgibson/dotfiles-Defense).**
 > This file is *attacker-authored* purple — "here's the telemetry I trip," next to the
 > attack that trips it. Portable, deployable detection content (Sigma rules, Sysmon
 > baselines, Zeek/Suricata tuning, SIEM saved-searches) and the Dockerized detection lab
