@@ -49,7 +49,7 @@ jobs:
     # covers workflow_dispatch, which can be launched against ANY ref. We only ever
     # cut tags/releases from the default branch.
     if: >-
-      github.repository_owner == 'Gerrrt' &&
+      github.repository_owner == 'dotgibson' &&
       github.ref == format('refs/heads/{0}', github.event.repository.default_branch)
     runs-on: ubuntu-latest
     timeout-minutes: 10
