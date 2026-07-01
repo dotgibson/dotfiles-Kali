@@ -83,7 +83,7 @@ jobs:
     # First-party only, and on the workflow_run path only when auto-tag actually
     # succeeded (a failed/cancelled tag run must not fan a half-baked release out).
     if: >-
-      github.repository_owner == 'Gerrrt' &&
+      github.repository_owner == 'dotgibson' &&
       (github.event_name == 'workflow_dispatch' ||
        github.event.workflow_run.conclusion == 'success')
     runs-on: ubuntu-latest
@@ -300,7 +300,7 @@ jobs:
           # heredoc terminator inside a YAML run-block would not close the doc).
           body="$RUNNER_TEMP/pr-body.md"; : > "$body"
           {
-            printf 'Automated companion fan-out from `Gerrrt/htpx` **%s**.\n\n' "$TAG"
+            printf 'Automated companion fan-out from `dotgibson/htpx` **%s**.\n\n' "$TAG"
             printf 'Re-syncs the vendored `offensive/companion/` subtree to htpx %s via\n' "$TAG"
             printf '`scripts/sync-companion.sh` and bumps `companion.lock`:\n\n'
             printf '`companion_sha`: `%s` -> `%s`\n\n' "${comp_before:0:12}" "${comp_after:0:12}"

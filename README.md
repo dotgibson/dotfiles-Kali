@@ -5,7 +5,7 @@ recon → exploit → evasion, on a Kali/WSL2 base.
 
 `recon` · `exploit` · `evasion`
 
-[![showcase](https://img.shields.io/badge/showcase-live-7aa2f7?style=flat-square)](https://gerrrt.github.io/dotfiles-web/) ![red team](https://img.shields.io/badge/red--team-f7768e?style=flat-square)
+[![showcase](https://img.shields.io/badge/showcase-live-7aa2f7?style=flat-square)](https://dotgibson.github.io/dotfiles-web/) ![red team](https://img.shields.io/badge/red--team-f7768e?style=flat-square)
 
 ---
 
@@ -116,7 +116,7 @@ before `local` (so a machine-specific override still wins).
 | `install/offensive-packages.txt` | the apt tool list (installed after the OS + Core layers) |
 | `OFFENSIVE-METHODOLOGY.md` | the phase → MITRE ATT&CK → tool map behind the layer |
 | `PURPLE-TEAM.md` | the defensive mirror of `hacktheplanet` — Splunk/Sentinel detections + event-ID reference for each attack (purple-team perspective / red OPSEC) |
-| `offensive/companion` | the structured, ATT&CK-tagged red↔blue companion (the paired sibling of `hacktheplanet`/`PURPLE-TEAM.md`) — a **vendored `git subtree` of [Gerrrt/htpx](https://github.com/Gerrrt/htpx)** (provenance in `companion.lock`; resync with `scripts/sync-companion.sh`). Symlinked to `~/companion`, browsed with `htpx` |
+| `offensive/companion` | the structured, ATT&CK-tagged red↔blue companion (the paired sibling of `hacktheplanet`/`PURPLE-TEAM.md`) — a **vendored `git subtree` of [dotgibson/htpx](https://github.com/dotgibson/htpx)** (provenance in `companion.lock`; resync with `scripts/sync-companion.sh`). Symlinked to `~/companion`, browsed with `htpx` |
 
 Same discipline as Core: every alias/function touching an optional tool is
 guarded by a `HAVE_*` flag, so the file is **inert** on a box where the tool

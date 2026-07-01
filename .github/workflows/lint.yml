@@ -11,7 +11,7 @@ name: lint
 #     dotfiles-core gated by ITS OWN CI; a finding there is fixed upstream and
 #     would be a false red here. Every file list below filters ':!:core/**'.
 #   • offensive/companion/ is EXCLUDED for the same reason — it is a vendored
-#     subtree of Gerrrt/htpx, gated by its own CI; fix upstream, not here. The file
+#     subtree of dotgibson/htpx, gated by its own CI; fix upstream, not here. The file
 #     lists also filter ':!:offensive/companion/**'. (The companion drift gate in
 #     companion.yml still RUNS the vendored gen-views.sh against this repo's flat
 #     views — that's the bridge check, not linting the vendored code.)

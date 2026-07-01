@@ -2,7 +2,7 @@
 # scripts/sync-companion.sh — pull the latest companion from upstream htpx and
 # refresh companion.lock. The consumer-side half of the vendoring contract.
 # ──────────────────────────────────────────────────────────────────────────────
-# offensive/companion/ is a vendored `git subtree` of Gerrrt/htpx (provenance in
+# offensive/companion/ is a vendored `git subtree` of dotgibson/htpx (provenance in
 # companion.lock). Upstream is the source of truth; this is the one command that
 # re-pulls htpx `main` into the prefix AND records the new git-subtree-split sha in
 # companion.lock, so the lock can never drift from what's actually vendored. It is

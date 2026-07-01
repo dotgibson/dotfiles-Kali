@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # test/check-companion-freshness.sh — is the vendored offensive/companion/ subtree BEHIND upstream?
 # ──────────────────────────────────────────────────────────────────────────────
-# The vendored offensive/companion/ here is a git-subtree copy of Gerrrt/htpx (the
+# The vendored offensive/companion/ here is a git-subtree copy of dotgibson/htpx (the
 # standalone red<->blue pentest companion; provenance in companion.lock). Nothing on
 # THIS side tracked whether that copy had fallen behind upstream — so a fix landing in
 # htpx could sit un-pulled here indefinitely. This is the consumer-side freshness
@@ -74,7 +74,7 @@ if [[ ! "$SPLIT" =~ ^[0-9a-f]{40}$ ]]; then
 fi
 
 # Upstream repo/branch come from the lock too (override with COMPANION_UPSTREAM / COMPANION_BRANCH).
-# companion_repo is recorded as an owner/name slug (Gerrrt/htpx); derive the HTTPS URL the
+# companion_repo is recorded as an owner/name slug (dotgibson/htpx); derive the HTTPS URL the
 # same way sync-companion.sh does when no override is given.
 REPO_SLUG="$(sed -n 's/^companion_repo=//p' companion.lock | head -n1)"
 LOCK_BRANCH="$(sed -n 's/^companion_branch=//p' companion.lock | head -n1)"

@@ -5,7 +5,7 @@ corpus — browse an attack beside its detection, fill `{{slots}}`, clip.
 
 `fzf` · `mitre-attack` · `purple-team`
 
-[![showcase](https://img.shields.io/badge/showcase-live-7aa2f7?style=flat-square)](https://gerrrt.github.io/dotfiles-web/) ![purple team](https://img.shields.io/badge/purple--team-bb9af7?style=flat-square)
+[![showcase](https://img.shields.io/badge/showcase-live-7aa2f7?style=flat-square)](https://dotgibson.github.io/dotfiles-web/) ![purple team](https://img.shields.io/badge/purple--team-bb9af7?style=flat-square)
 
 ---
 
@@ -33,7 +33,7 @@ companion/
     └── blue/*.md            # detections (frontmatter + SPL), paired back to red
 ```
 
-This directory is **host-agnostic** (host-agnostic so it lives in its own repo `Gerrrt/htpx` and is vendored back like `core/`): `gen-views.sh`'s flat-view targets default to
+This directory is **host-agnostic** (host-agnostic so it lives in its own repo `dotgibson/htpx` and is vendored back like `core/`): `gen-views.sh`'s flat-view targets default to
 this repo's `PURPLE-TEAM.md` + `offensive/hacktheplanet` (repo-root-relative) but
 can be overridden with
 `$COMPANION_TARGETS` (and a target that isn't present is skipped, so a standalone
@@ -185,7 +185,7 @@ giving up the rich prose. Workflow: edit the entry → `gen-views.sh` → commit
    Tagging both colours with the _same_ technique IDs turns `pair:` into a
    derivable join (not just a hand-kept link).
 2. **Standalone vs in-repo — resolved.** This now lives in its own repo
-   (`Gerrrt/htpx`) and is vendored back into `dotfiles-Kali` at
+   (`dotgibson/htpx`) and is vendored back into `dotfiles-Kali` at
    `offensive/companion/` via `git subtree` (provenance in Kali's `companion.lock`,
    resynced with `scripts/sync-companion.sh`). Kali consumes it; this repo is the
    source of truth.

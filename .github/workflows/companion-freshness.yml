@@ -1,7 +1,7 @@
 name: companion-freshness
 
 # Consumer-side freshness watcher for the vendored offensive/companion/ subtree. htpx
-# (Gerrrt/htpx) is the source of truth for the structured red<->blue companion and is
+# (dotgibson/htpx) is the source of truth for the structured red<->blue companion and is
 # vendored here via git subtree; nothing on THIS side tracked whether the vendored copy
 # had fallen behind upstream — so a fix landing in htpx could sit un-pulled here
 # indefinitely. Weekly (and on demand) this checks the recorded vendored commit
@@ -26,7 +26,7 @@ jobs:
     # Scheduled runs fire on every fork that has Actions enabled; gate on the owner so a
     # fork's clock doesn't burn minutes (and email a red run) on a watcher that only
     # matters for the canonical repo. workflow_dispatch from a fork still no-ops cleanly.
-    if: github.repository_owner == 'Gerrrt'
+    if: github.repository_owner == 'dotgibson'
     runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:
