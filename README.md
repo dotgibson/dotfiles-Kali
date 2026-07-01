@@ -84,9 +84,10 @@ No mainstream tool ships attacks paired with the telemetry they trip.
 
 ## Corpus
 
-22 paired concepts + 1 unpaired recon entry (SMB enum), spanning Credential
-Access, Privilege Escalation, Lateral Movement, Persistence, Execution, and
-Discovery:
+35 paired concepts + 1 unpaired recon entry (SMB enum), spanning Credential
+Access, Privilege Escalation, Lateral Movement, Persistence, Execution, Defense
+Evasion, and Discovery — on-prem AD, a multi-cloud slice (Entra/M365, AWS, GCP),
+Kubernetes, and Okta:
 
 | Attack (red)                      | Detection (blue)                                      | ATT&CK    |
 | --------------------------------- | ----------------------------------------------------- | --------- |
@@ -112,6 +113,19 @@ Discovery:
 | WMI exec (impacket-wmiexec)       | `4688` `WmiPrvSE.exe` child shell                     | T1047     |
 | Scheduled-task persistence        | `4698` task created (suspicious action)               | T1053.005 |
 | WMI subscription persistence      | Sysmon `19`/`20`/`21` consumer/binding               | T1546.003 |
+| Silver Ticket (forged TGS)        | `4624` Kerberos logon, no `4769` _(soft)_            | T1558.002 |
+| DCShadow (rogue DC)               | `4742` `GC/` SPN write + `5137`/`4662`               | T1207     |
+| Illicit consent grant (Entra)     | Entra audit "Consent to application" _(KQL, cloud)_  | T1528     |
+| SP credential backdoor (Entra)    | Entra audit "Add SP credentials" _(KQL, cloud)_     | T1098.001 |
+| Privileged pod → node escape (K8s) | audit: privileged/hostPID/hostPath pod create       | T1610/T1611 |
+| Pod exec / attach (K8s)           | audit: `pods/exec` subresource create                | T1609     |
+| Cluster-admin binding (K8s)       | audit: roleRef `cluster-admin` binding               | T1098     |
+| MFA reset → takeover (Okta)       | System Log `user.mfa.factor.reset_all`               | T1556.006 |
+| API token persistence (Okta)      | System Log `system.api_token.create`                 | T1098     |
+| Rogue IdP backdoor (Okta)         | System Log `system.idp.lifecycle.create`             | T1556     |
+| IAM access-key backdoor (AWS)     | CloudTrail `CreateAccessKey` actor≠target _(cloud)_  | T1098.001 |
+| Console takeover (AWS)            | CloudTrail Create/UpdateLoginProfile _(cloud)_       | T1098     |
+| SA key creation (GCP)            | Cloud Audit `CreateServiceAccountKey` _(cloud)_      | T1098.001 |
 
 Growth is mechanical now that the drift gate exists: author the red+blue entry
 pair, mark the matching flat blocks, then `gen-views.sh`. For **on-prem** pairs the
