@@ -72,6 +72,7 @@ a few (e.g. `hethttp`) are unguarded. Engagement data lives in `$ENGAGEMENTS_DIR
 | `xdev` | ExploitDev — stack/SEH overflows, shellcode, DEP/ASLR | `~/exploitdev` |
 | `evade` | Evasion — AV/AMSI/AppLocker bypass, process injection | `~/evasion` |
 | `ipp` | IppSec — engagement methodology & recon loop | `~/ippsec` |
+| `htpx` | Companion — ATT&CK-tagged red↔blue corpus (fzf: pick → preview attack beside detection → fill `{{slots}}` → clip) | `~/companion` |
 
 ### Helper Functions
 
