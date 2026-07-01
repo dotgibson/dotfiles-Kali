@@ -7,4 +7,4 @@
 # and update companion_sha below to the new git-subtree-split commit.
 companion_repo=Gerrrt/htpx
 companion_branch=main
-companion_sha=fa77ab39cf084f345aafe6016dfb9ffa632bfedc
+companion_sha=ce75aefc0aba670d63677d12d93ff9815fa08b6c
