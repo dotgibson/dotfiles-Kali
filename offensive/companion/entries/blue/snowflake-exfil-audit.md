@@ -21,5 +21,5 @@ on-prem Windows.
 
 ```spl
 index=snowflake sourcetype=snowflake:query_history query_type=UNLOAD
-| table start_time, user_name, role_name, warehouse_name, query_text
+| table _time, user_name, role_name, warehouse_name, query_text
 ```

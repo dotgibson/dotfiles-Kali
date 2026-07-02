@@ -20,6 +20,6 @@ Snowflake `ACCOUNT_USAGE.QUERY_HISTORY` telemetry, companion-only — `PURPLE-TE
 on-prem Windows.
 
 ```spl
-index=snowflake sourcetype=snowflake:query_history query_text="*NETWORK POLICY*" NOT query_text="SHOW *"
-| table start_time, user_name, role_name, query_type, query_text
+index=snowflake sourcetype=snowflake:query_history (query_text="*NETWORK POLICY*" OR query_text="*NETWORK_POLICY*") NOT query_text="SHOW *"
+| table _time, user_name, role_name, query_type, query_text
 ```

@@ -20,6 +20,6 @@ Snowflake `ACCOUNT_USAGE.QUERY_HISTORY` telemetry, companion-only — `PURPLE-TE
 on-prem Windows.
 
 ```spl
-index=snowflake sourcetype=snowflake:query_history (query_type=CREATE_USER OR (query_type=GRANT query_text="*ACCOUNTADMIN*"))
-| table start_time, user_name, role_name, query_text
+index=snowflake sourcetype=snowflake:query_history (query_type=CREATE_USER OR (query_type=GRANT (query_text="*ACCOUNTADMIN*" OR query_text="*SECURITYADMIN*")))
+| table _time, user_name, role_name, query_text
 ```
