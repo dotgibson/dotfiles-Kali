@@ -84,11 +84,12 @@ No mainstream tool ships attacks paired with the telemetry they trip.
 
 ## Corpus
 
-56 paired concepts + 1 unpaired recon entry (SMB enum), spanning Credential
+59 paired concepts + 1 unpaired recon entry (SMB enum), spanning Credential
 Access, Privilege Escalation, Lateral Movement, Persistence, Execution, Defense
-Evasion, Exfiltration, and Discovery — on-prem AD, a multi-cloud slice (Entra/M365,
-AWS, GCP), Kubernetes, Okta, CI/CD (GitHub Actions, GitLab, Jenkins), the Harbor
-container registry, HashiCorp Vault, Terraform Cloud, and the Snowflake data cloud:
+Evasion, Collection, Exfiltration, and Discovery — on-prem AD, a multi-cloud slice
+(Entra/M365, AWS, GCP), Kubernetes, Okta, Google Workspace, CI/CD (GitHub Actions,
+GitLab, Jenkins), the Harbor container registry, HashiCorp Vault, Terraform Cloud,
+and the Snowflake data cloud:
 
 | Attack (red)                      | Detection (blue)                                      | ATT&CK    |
 | --------------------------------- | ----------------------------------------------------- | --------- |
@@ -148,6 +149,9 @@ container registry, HashiCorp Vault, Terraform Cloud, and the Snowflake data clo
 | Data exfil via COPY INTO (Snowflake) | `QUERY_HISTORY` `QUERY_TYPE=UNLOAD` _(data)_       | T1567.002 |
 | Backdoor user + ACCOUNTADMIN (Snowflake) | `QUERY_HISTORY` `CREATE_USER`/priv `GRANT` _(data)_ | T1136.003 |
 | Network-policy tamper (Snowflake) | `QUERY_HISTORY` `NETWORK POLICY` change _(data)_      | T1562.007 |
+| Illicit OAuth grant (Workspace)   | token audit `authorize` _(cloud)_                    | T1528     |
+| Super-admin grant (Workspace)     | admin audit `GRANT_DELEGATED_ADMIN_PRIVILEGES` _(cloud)_ | T1098.003 |
+| External mail forwarding (Workspace) | audit `email_forwarding_out_of_domain` _(cloud)_  | T1114.003 |
 
 Growth is mechanical now that the drift gate exists: author the red+blue entry
 pair, mark the matching flat blocks, then `gen-views.sh`. For **on-prem** pairs the
