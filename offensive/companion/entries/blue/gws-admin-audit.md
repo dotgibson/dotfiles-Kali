@@ -1,7 +1,7 @@
 ---
 id: gws-admin-audit
 title: Detect admin-role grant (Google Workspace admin audit)
-detection: gws-admin-log
+detection: gws-audit-log
 event_ids: []
 attack:
   tactic: TA0003

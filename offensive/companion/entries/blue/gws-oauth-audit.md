@@ -1,7 +1,7 @@
 ---
 id: gws-oauth-audit
 title: Detect illicit OAuth grant (Google Workspace token audit)
-detection: gws-admin-log
+detection: gws-audit-log
 event_ids: []
 attack:
   tactic: TA0006

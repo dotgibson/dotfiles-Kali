@@ -1,7 +1,7 @@
 ---
 id: gws-mail-forward-audit
 title: Detect external mail forwarding (Google Workspace audit)
-detection: gws-admin-log
+detection: gws-audit-log
 event_ids: []
 attack:
   tactic: TA0009
