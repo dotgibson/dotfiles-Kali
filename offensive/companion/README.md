@@ -84,10 +84,10 @@ No mainstream tool ships attacks paired with the telemetry they trip.
 
 ## Corpus
 
-35 paired concepts + 1 unpaired recon entry (SMB enum), spanning Credential
+38 paired concepts + 1 unpaired recon entry (SMB enum), spanning Credential
 Access, Privilege Escalation, Lateral Movement, Persistence, Execution, Defense
 Evasion, and Discovery — on-prem AD, a multi-cloud slice (Entra/M365, AWS, GCP),
-Kubernetes, and Okta:
+Kubernetes, Okta, and GitHub Actions CI/CD:
 
 | Attack (red)                      | Detection (blue)                                      | ATT&CK    |
 | --------------------------------- | ----------------------------------------------------- | --------- |
@@ -126,6 +126,9 @@ Kubernetes, and Okta:
 | IAM access-key backdoor (AWS)     | CloudTrail `CreateAccessKey` actor≠target _(cloud)_  | T1098.001 |
 | Console takeover (AWS)            | CloudTrail Create/UpdateLoginProfile _(cloud)_       | T1098     |
 | SA key creation (GCP)            | Cloud Audit `CreateServiceAccountKey` _(cloud)_      | T1098.001 |
+| Rogue self-hosted runner (GitHub) | audit `self_hosted_runner.created` _(cloud)_         | T1543     |
+| Branch-protection tamper (GitHub) | audit `protected_branch.destroy`/`policy_override` _(cloud)_ | T1562.001 |
+| Deploy-key/PAT backdoor (GitHub)  | audit `repo.create_deploy_key`/PAT grant _(cloud)_   | T1098     |
 
 Growth is mechanical now that the drift gate exists: author the red+blue entry
 pair, mark the matching flat blocks, then `gen-views.sh`. For **on-prem** pairs the
