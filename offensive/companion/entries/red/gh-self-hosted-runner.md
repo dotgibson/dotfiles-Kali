@@ -1,7 +1,7 @@
 ---
 id: gh-self-hosted-runner
 title: Rogue self-hosted runner (capture jobs + secrets)
-section: GitHub / CI-CD
+section: GitHub / CI/CD
 phase: Persistence
 attack:
   tactic: TA0003
@@ -12,7 +12,7 @@ pair: gh-runner-audit
 ---
 
 With admin (or `repo`/`actions` scope) over a repo, register your own self-hosted
-runner: mint a registration token from the API, attach the runner with a label a
+runner: mint a registration token from the API, attach the runner with a label that a
 workflow targets, and every matching job now executes on your host — you read its
 checked-out source, its injected `secrets.*`, and the ephemeral `GITHUB_TOKEN`.
 Durable, non-interactive, and survives the compromised admin's password reset. The

@@ -1,7 +1,7 @@
 ---
 id: gh-branch-protection-off
 title: Disable/override branch protection (merge unreviewed code)
-section: GitHub / CI-CD
+section: GitHub / CI/CD
 phase: Defense Evasion
 attack:
   tactic: TA0005
@@ -21,6 +21,6 @@ branch; the first writes `protected_branch.destroy`, the second
 ```sh
 # delete protection on main, land code, then it can be re-created to cover tracks
 gh api -X DELETE /repos/<owner>/<repo>/branches/main/protection
-# — or, as admin, bypass the policy on a single merge (policy_override):
+# — or, as admin, bypass the policy on a single merge (protected_branch.policy_override):
 gh pr merge <pr-number> --admin --merge
 ```

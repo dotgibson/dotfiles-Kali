@@ -21,6 +21,6 @@ GitHub Enterprise audit-log telemetry, companion-only — `PURPLE-TEAM.md` is on
 Windows.
 
 ```spl
-index=github sourcetype=github:audit action IN (protected_branch.destroy, protected_branch.policy_override)
+index=github sourcetype=github:audit action IN ("protected_branch.destroy", "protected_branch.policy_override")
 | table _time, actor, action, repo, branch
 ```

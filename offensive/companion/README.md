@@ -127,8 +127,8 @@ Kubernetes, Okta, and GitHub Actions CI/CD:
 | Console takeover (AWS)            | CloudTrail Create/UpdateLoginProfile _(cloud)_       | T1098     |
 | SA key creation (GCP)            | Cloud Audit `CreateServiceAccountKey` _(cloud)_      | T1098.001 |
 | Rogue self-hosted runner (GitHub) | audit `self_hosted_runner.created` _(cloud)_         | T1543     |
-| Branch-protection tamper (GitHub) | audit `protected_branch.destroy`/`policy_override` _(cloud)_ | T1562.001 |
-| Deploy-key/PAT backdoor (GitHub)  | audit `repo.create_deploy_key`/PAT grant _(cloud)_   | T1098     |
+| Branch-protection tamper (GitHub) | audit `protected_branch.destroy` / `protected_branch.policy_override` _(cloud)_ | T1562.001 |
+| Deploy-key/PAT backdoor (GitHub)  | audit `repo.create_deploy_key` / `personal_access_token.access_granted` _(cloud)_ | T1098 |
 
 Growth is mechanical now that the drift gate exists: author the red+blue entry
 pair, mark the matching flat blocks, then `gen-views.sh`. For **on-prem** pairs the

@@ -21,6 +21,6 @@ GitHub Enterprise audit-log telemetry, companion-only — `PURPLE-TEAM.md` is on
 Windows.
 
 ```spl
-index=github sourcetype=github:audit action IN (repo.create_deploy_key, personal_access_token.access_granted)
+index=github sourcetype=github:audit action IN ("repo.create_deploy_key", "personal_access_token.access_granted")
 | table _time, actor, action, repo
 ```

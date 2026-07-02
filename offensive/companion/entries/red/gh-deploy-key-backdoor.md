@@ -1,7 +1,7 @@
 ---
 id: gh-deploy-key-backdoor
 title: Deploy key / fine-grained PAT backdoor (durable repo access)
-section: GitHub / CI-CD
+section: GitHub / CI/CD
 phase: Persistence
 attack:
   tactic: TA0003
