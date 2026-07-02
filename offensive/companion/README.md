@@ -84,11 +84,11 @@ No mainstream tool ships attacks paired with the telemetry they trip.
 
 ## Corpus
 
-50 paired concepts + 1 unpaired recon entry (SMB enum), spanning Credential
+53 paired concepts + 1 unpaired recon entry (SMB enum), spanning Credential
 Access, Privilege Escalation, Lateral Movement, Persistence, Execution, Defense
 Evasion, and Discovery — on-prem AD, a multi-cloud slice (Entra/M365, AWS, GCP),
-Kubernetes, Okta, GitHub Actions + GitLab CI/CD, the Harbor container registry,
-HashiCorp Vault, and Terraform Cloud:
+Kubernetes, Okta, CI/CD (GitHub Actions, GitLab, Jenkins), the Harbor container
+registry, HashiCorp Vault, and Terraform Cloud:
 
 | Attack (red)                      | Detection (blue)                                      | ATT&CK    |
 | --------------------------------- | ----------------------------------------------------- | --------- |
@@ -142,6 +142,9 @@ HashiCorp Vault, and Terraform Cloud:
 | Rogue agent pool (Terraform)      | audit `agent_pool` `create` _(IaC)_                  | T1543     |
 | Org/team token backdoor (Terraform) | audit `authentication_token` `create` _(IaC)_      | T1098     |
 | Variable injection (Terraform)    | audit `variable` `create`/`update` _(IaC)_           | T1072     |
+| Script Console RCE (Jenkins)      | audit `/script`/`/scriptText` request _(CI)_         | T1059     |
+| User API token backdoor (Jenkins) | audit `generateNewToken` request _(CI)_              | T1098     |
+| Job/pipeline backdoor (Jenkins)   | audit `/createItem`/`/job/<name>/configSubmit` request _(CI)_   | T1072     |
 
 Growth is mechanical now that the drift gate exists: author the red+blue entry
 pair, mark the matching flat blocks, then `gen-views.sh`. For **on-prem** pairs the
