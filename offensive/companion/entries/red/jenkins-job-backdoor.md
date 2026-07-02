@@ -15,7 +15,7 @@ Jenkins is a deployment tool — abuse it to run code across the estate. Create 
 reconfigure one) whose build step runs your payload, then let it execute on the
 controller or fan out to build **agents** (harvesting their credentials and reaching the
 networks they can). A cron/SCM trigger makes it recurring. Creating a job hits
-`/createItem`; reconfiguring one hits `job/<name>/configSubmit` — both logged by the Audit
+`/createItem`; reconfiguring one hits `/job/<name>/configSubmit` — both logged by the Audit
 Trail plugin. (CI controller — no slots.)
 
 ```sh

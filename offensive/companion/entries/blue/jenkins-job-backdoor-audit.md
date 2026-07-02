@@ -10,7 +10,7 @@ source: Jenkins abuse (malicious job / pipeline)
 pair: jenkins-job-backdoor
 ---
 
-`/createItem` (new job) and `job/<name>/configSubmit` (reconfigure) are the invariants.
+`/createItem` (new job) and `/job/<name>/configSubmit` (reconfigure) are the invariants.
 Job changes are routine in active shops, so the signal is one by an unexpected actor, on
 a sensitive/privileged job, outside config-as-code (JCasC/pipeline-in-SCM), or immediately
 followed by a build. Prefer pipelines defined in version-controlled `Jenkinsfile`s so
@@ -20,6 +20,6 @@ Jenkins Audit Trail plugin telemetry, companion-only — `PURPLE-TEAM.md` is on-
 Windows.
 
 ```spl
-index=jenkins sourcetype=jenkins:audit ("/createItem" OR "/configSubmit")
+index=jenkins sourcetype=jenkins:audit ("/createItem" OR uri="*/job/*/configSubmit")
 | table _time, user, uri
 ```

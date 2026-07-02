@@ -20,6 +20,6 @@ Jenkins Audit Trail plugin telemetry, companion-only — `PURPLE-TEAM.md` is on-
 Windows.
 
 ```spl
-index=jenkins sourcetype=jenkins:audit "generateNewToken"
+index=jenkins sourcetype=jenkins:audit "ApiTokenProperty/generateNewToken"
 | table _time, user, uri
 ```
