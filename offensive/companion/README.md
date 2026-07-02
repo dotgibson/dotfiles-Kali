@@ -84,11 +84,11 @@ No mainstream tool ships attacks paired with the telemetry they trip.
 
 ## Corpus
 
-53 paired concepts + 1 unpaired recon entry (SMB enum), spanning Credential
+56 paired concepts + 1 unpaired recon entry (SMB enum), spanning Credential
 Access, Privilege Escalation, Lateral Movement, Persistence, Execution, Defense
-Evasion, and Discovery — on-prem AD, a multi-cloud slice (Entra/M365, AWS, GCP),
-Kubernetes, Okta, CI/CD (GitHub Actions, GitLab, Jenkins), the Harbor container
-registry, HashiCorp Vault, and Terraform Cloud:
+Evasion, Exfiltration, and Discovery — on-prem AD, a multi-cloud slice (Entra/M365,
+AWS, GCP), Kubernetes, Okta, CI/CD (GitHub Actions, GitLab, Jenkins), the Harbor
+container registry, HashiCorp Vault, Terraform Cloud, and the Snowflake data cloud:
 
 | Attack (red)                      | Detection (blue)                                      | ATT&CK    |
 | --------------------------------- | ----------------------------------------------------- | --------- |
@@ -145,6 +145,9 @@ registry, HashiCorp Vault, and Terraform Cloud:
 | Script Console RCE (Jenkins)      | audit `/script`/`/scriptText` request _(CI)_         | T1059     |
 | User API token backdoor (Jenkins) | audit `generateNewToken` request _(CI)_              | T1098     |
 | Job/pipeline backdoor (Jenkins)   | audit `/createItem`/`/job/<name>/configSubmit` request _(CI)_   | T1072     |
+| Data exfil via COPY INTO (Snowflake) | `QUERY_HISTORY` `QUERY_TYPE=UNLOAD` _(data)_       | T1567.002 |
+| Backdoor user + ACCOUNTADMIN (Snowflake) | `QUERY_HISTORY` `CREATE_USER`/priv `GRANT` _(data)_ | T1136.003 |
+| Network-policy tamper (Snowflake) | `QUERY_HISTORY` `NETWORK POLICY` change _(data)_      | T1562.007 |
 
 Growth is mechanical now that the drift gate exists: author the red+blue entry
 pair, mark the matching flat blocks, then `gen-views.sh`. For **on-prem** pairs the
