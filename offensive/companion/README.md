@@ -84,12 +84,12 @@ No mainstream tool ships attacks paired with the telemetry they trip.
 
 ## Corpus
 
-59 paired concepts + 1 unpaired recon entry (SMB enum), spanning Credential
+62 paired concepts + 1 unpaired recon entry (SMB enum), spanning Credential
 Access, Privilege Escalation, Lateral Movement, Persistence, Execution, Defense
 Evasion, Collection, Exfiltration, and Discovery — on-prem AD, a multi-cloud slice
 (Entra/M365, AWS, GCP), Kubernetes, Okta, Google Workspace, CI/CD (GitHub Actions,
 GitLab, Jenkins), the Harbor container registry, HashiCorp Vault, Terraform Cloud,
-and the Snowflake data cloud:
+the Snowflake data cloud, and the Cloudflare edge:
 
 | Attack (red)                      | Detection (blue)                                      | ATT&CK    |
 | --------------------------------- | ----------------------------------------------------- | --------- |
@@ -152,6 +152,9 @@ and the Snowflake data cloud:
 | Illicit OAuth grant (Workspace)   | token audit `authorize` _(cloud)_                    | T1528     |
 | Super-admin grant (Workspace)     | admin audit `GRANT_DELEGATED_ADMIN_PRIVILEGES` _(cloud)_ | T1098.003 |
 | External mail forwarding (Workspace) | audit `email_forwarding_out_of_domain` _(cloud)_  | T1114.003 |
+| API token backdoor (Cloudflare)   | audit `resource.type=api_token` `create` _(edge)_    | T1098     |
+| WAF/firewall rule disable (Cloudflare) | audit `firewall_rule`/`ruleset` `delete`/`update` _(edge)_ | T1562.001 |
+| Malicious Worker deploy (Cloudflare) | audit `resource.type=worker` `create`/`update` _(edge)_ | T1648     |
 
 Growth is mechanical now that the drift gate exists: author the red+blue entry
 pair, mark the matching flat blocks, then `gen-views.sh`. For **on-prem** pairs the

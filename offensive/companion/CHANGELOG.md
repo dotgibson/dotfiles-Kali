@@ -20,6 +20,106 @@ GitHub Release; `sync-fanout.yml` then opens the Kali sync PR.
 
 ## [Unreleased]
 
+### Added
+
+- **Cloudflare edge** platform (3 companion-only red↔blue pairs) — detections over the
+  Cloudflare account audit log (`product: cloudflare`, fields `action.type`/`resource.type`):
+  - `cf-api-token` ↔ `cf-api-token-audit` — mint a long-lived API token for durable
+    control-plane access after account compromise; detect `resource.type=api_token`
+    `action.type=create` (T1098).
+  - `cf-waf-disable` ↔ `cf-waf-disable-audit` — delete/disable a WAF or firewall rule to
+    expose the origin; detect `firewall_rule`/`ruleset` `delete`/`update` (T1562.001).
+  - `cf-worker-deploy` ↔ `cf-worker-deploy-audit` — deploy a malicious Worker to skim/proxy
+    live edge traffic; detect `resource.type=worker` `create`/`update` (T1648).
+
+- **Google Workspace** platform (3 companion-only red↔blue pairs) — detections over the
+  Google Workspace admin/token/user audit logs (`product: google_workspace`, field
+  `eventName`):
+  - `gws-oauth-grant` ↔ `gws-oauth-audit` — consent-phish a malicious OAuth app into
+    Gmail/Drive scopes; detect token `authorize` (T1528).
+  - `gws-super-admin` ↔ `gws-admin-audit` — promote a controlled user to super admin;
+    detect `GRANT_DELEGATED_ADMIN_PRIVILEGES` / `ASSIGN_ROLE` (T1098.003).
+  - `gws-mail-forward` ↔ `gws-mail-forward-audit` — external auto-forwarding for BEC
+    exfil; detect `email_forwarding_out_of_domain` (T1114.003).
+
+- **Snowflake data cloud** platform (3 companion-only red↔blue pairs) — mirrors the
+  2024 Snowflake credential-attack TTPs, detected via `ACCOUNT_USAGE.QUERY_HISTORY`
+  (`product: snowflake`, `query_type`/`query_text`):
+  - `snowflake-exfil-stage` ↔ `snowflake-exfil-audit` — `COPY INTO` external stage bulk
+    unload; detect `QUERY_TYPE=UNLOAD` (T1567.002).
+  - `snowflake-rogue-user` ↔ `snowflake-user-audit` — backdoor user + ACCOUNTADMIN grant;
+    detect `CREATE_USER` / privileged `GRANT` (T1136.003).
+  - `snowflake-network-policy` ↔ `snowflake-network-policy-audit` — open/drop the IP
+    allowlist so stolen creds work anywhere; detect `NETWORK POLICY` changes (T1562.007).
+
+- **Jenkins CI/CD** platform (3 companion-only red↔blue pairs) — the self-hosted
+  counterpart to the GitHub/GitLab SaaS rounds, detected via the Jenkins Audit Trail
+  plugin log (`product: jenkins`, keyword/URI matches):
+  - `jenkins-script-console` ↔ `jenkins-script-console-audit` — Groovy Script Console
+    RCE + in-memory credential dump; detect `/script` / `/scriptText` (T1059).
+  - `jenkins-api-token` ↔ `jenkins-api-token-audit` — mint a user API token for durable
+    non-interactive access; detect `generateNewToken` (T1098).
+  - `jenkins-job-backdoor` ↔ `jenkins-job-backdoor-audit` — create/reconfigure a job to
+    run attacker code on the controller + agents; detect `/createItem` / `/job/<name>/configSubmit`
+    (T1072).
+
+- **Terraform Cloud / IaC** platform (3 companion-only red↔blue pairs) — detections
+  are Terraform Cloud audit-trail SPL (`product: terraform`, nested `resource.type` /
+  `resource.action`):
+  - `tfc-agent-hijack` ↔ `tfc-agent-audit` — rogue agent pool routes plans/applies to
+    attacker infra (captures cloud creds + state); detect `agent_pool` `create` (T1543).
+  - `tfc-token-backdoor` ↔ `tfc-token-audit` — mint an org/team API token for durable
+    API + state access; detect `authentication_token` `create` (T1098).
+  - `tfc-var-injection` ↔ `tfc-var-audit` — inject a workspace env variable to run code
+    / exfil at apply; detect `variable` `create`/`update` (T1072).
+
+- **HashiCorp Vault** platform (3 companion-only red↔blue pairs), opening the
+  secrets-management seam — detections are Vault audit-device SPL (`product: vault`
+  on the Sigma side):
+  - `vault-secret-exfil` ↔ `vault-secret-read-audit` — bulk-read KV secrets to drain
+    the credential store; detect `read` breadth over `secret/` paths (T1555).
+  - `vault-approle-backdoor` ↔ `vault-approle-audit` — create a rogue AppRole for
+    durable machine auth; detect create/update on `auth/approle/role/` (T1098).
+  - `vault-audit-disable` ↔ `vault-audit-device-audit` — disable a Vault audit device
+    to blind the SIEM; detect `delete` on a `sys/audit/` path (T1562.001).
+
+- **GitLab CI/CD** platform (3 companion-only red↔blue pairs), mirroring the GitHub
+  Actions round on GitLab audit-event telemetry (`product: gitlab`, field
+  `event_type`):
+  - `gl-runner-hijack` ↔ `gl-runner-audit` — attach an attacker-controlled runner to
+    the project to capture CI jobs + masked variables; detect
+    `set_runner_associated_projects` (T1543).
+  - `gl-protected-branch-off` ↔ `gl-protected-branch-audit` — remove protected-branch
+    rules to land unreviewed code; detect `protected_branch_removed` /
+    `protected_branch_created` (T1562.001).
+  - `gl-token-backdoor` ↔ `gl-token-audit` — mint a project access / deploy token for
+    durable access; detect `project_access_token_created` /
+    `personal_access_token_created` / `deploy_token_created` (T1098).
+- **Harbor container registry** platform (3 companion-only red↔blue pairs), opening
+  the container-image / registry supply-chain seam — detections are Harbor
+  registry audit-log SPL (`product: harbor` on the Sigma side):
+  - `harbor-image-backdoor` ↔ `harbor-image-push-audit` — push a trojanized image
+    over a trusted tag to poison downstream pulls; detect `operation=push`
+    artifact (T1525, Implant Internal Image).
+  - `harbor-robot-backdoor` ↔ `harbor-robot-audit` — mint a long-lived robot
+    account for durable registry access; detect `operation=create`
+    `resource_type=robot` (T1098).
+  - `harbor-artifact-delete` ↔ `harbor-artifact-delete-audit` — delete the trusted
+    artifact to force a poisoned re-pull + erase evidence; detect `operation=delete`
+    artifact/repository (T1070).
+- **GitHub Actions CI/CD** platform (3 companion-only red↔blue pairs), opening a
+  new logsource the way the Okta round did — detections are GitHub Enterprise
+  audit-log SPL (`product: github` on the Sigma side):
+  - `gh-self-hosted-runner` ↔ `gh-runner-audit` — rogue self-hosted runner
+    harvests job source + secrets; detect `self_hosted_runner.created` (T1543).
+  - `gh-branch-protection-off` ↔ `gh-branch-protection-audit` — disable/override
+    branch protection to land unreviewed code; detect `protected_branch.destroy` /
+    `protected_branch.policy_override` (T1562.001).
+  - `gh-deploy-key-backdoor` ↔ `gh-cred-audit` — writable deploy key / fine-grained
+    PAT for durable access; detect `repo.create_deploy_key` /
+    `personal_access_token.access_granted` (T1098).
+- Corpus is now 62 paired concepts + 1 unpaired recon entry.
+
 ## [v1.4.0] - 2026-06-30
 
 ### Fixed
