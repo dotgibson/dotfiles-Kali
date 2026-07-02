@@ -131,7 +131,7 @@ Kubernetes, Okta, GitHub Actions CI/CD, and the Harbor container registry:
 | Deploy-key/PAT backdoor (GitHub)  | audit `repo.create_deploy_key` / `personal_access_token.access_granted` _(cloud)_ | T1098 |
 | Backdoored image over trusted tag (Harbor) | audit `operation=push` artifact _(registry)_       | T1525     |
 | Robot-account backdoor (Harbor)   | audit `operation=create` `resource_type=robot` _(registry)_ | T1098     |
-| Artifact deletion (Harbor)        | audit `operation=delete` artifact/repo _(registry)_ | T1070     |
+| Artifact deletion (Harbor)        | audit `operation=delete` artifact/repository _(registry)_ | T1070     |
 
 Growth is mechanical now that the drift gate exists: author the red+blue entry
 pair, mark the matching flat blocks, then `gen-views.sh`. For **on-prem** pairs the
