@@ -19,8 +19,9 @@ writes a Vault audit record (`request.operation=read` on a `secret/` path). (Sec
 store — no on-host target, so no slots.)
 
 ```sh
-# enumerate then bulk-read every KV secret with the stolen token
-vault kv list -format=json secret/ | jq -r '.[]' | while read p; do vault kv get -format=json "secret/$p"; done
+# enumerate one KV level and read each leaf secret (list is non-recursive; drop
+# directory entries ending in '/', and recurse into them for a full sweep)
+vault kv list -format=json secret/ | jq -r '.[] | select(endswith("/") | not)' | while read -r p; do vault kv get -format=json "secret/$p"; done
 # or via the API:
 curl -s -H "X-Vault-Token: <token>" "https://<vault>:8200/v1/secret/data/<path>"
 ```

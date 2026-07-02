@@ -20,7 +20,7 @@ if it's the *only* audit device and Vault is configured to block on audit failur
 
 ```sh
 # disable the audit device so subsequent secret reads aren't logged
-vault audit disable file/
+vault audit disable file
 # or via the API:
 curl -s -H "X-Vault-Token: <token>" -X DELETE "https://<vault>:8200/v1/sys/audit/file"
 ```

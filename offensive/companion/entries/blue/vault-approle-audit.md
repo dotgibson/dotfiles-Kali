@@ -20,6 +20,6 @@ HashiCorp Vault audit-device telemetry, companion-only — `PURPLE-TEAM.md` is o
 Windows.
 
 ```spl
-index=vault sourcetype=vault:audit type=request request.operation IN (create, update) (request.path=sys/auth/* OR request.path=auth/approle/role/*)
+index=vault sourcetype=vault:audit type=request request.operation IN ("create", "update") (request.path=sys/auth/* OR request.path=auth/approle/role/*)
 | table _time, auth.display_name, request.operation, request.path, request.remote_address
 ```
