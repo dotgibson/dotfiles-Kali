@@ -15,9 +15,9 @@ Add your own credential so access outlives the compromised session: a **project 
 token** (scoped `api`/`write_repository`) drives the API and pushes to the repo; a
 **deploy token** gives durable clone + container-registry pull. Both are non-interactive,
 MFA-free, survive a password reset, and blend in among legitimate CI credentials. A
-project/personal access token writes `project_access_token_created` /
-`personal_access_token_created`; a deploy token writes `deploy_token_created`.
-(Cloud CI — no slots.)
+project access token writes `project_access_token_created`, a personal access token
+writes `personal_access_token_created`, and a deploy token writes
+`deploy_token_created`. (Cloud CI — no slots.)
 
 ```sh
 # mint a scoped project access token for durable API + push access

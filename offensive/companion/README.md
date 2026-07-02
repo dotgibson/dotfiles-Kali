@@ -133,8 +133,8 @@ Kubernetes, Okta, GitHub Actions + GitLab CI/CD, and the Harbor container regist
 | Robot-account backdoor (Harbor)   | audit `operation=create` `resource_type=robot` _(registry)_ | T1098     |
 | Artifact deletion (Harbor)        | audit `operation=delete` artifact/repository _(registry)_ | T1070     |
 | Rogue runner association (GitLab) | audit `set_runner_associated_projects` _(cloud)_     | T1543     |
-| Protected-branch tamper (GitLab)  | audit `protected_branch_removed`/`_created` _(cloud)_ | T1562.001 |
-| Access/deploy-token backdoor (GitLab) | audit `project_access_token_created` / `deploy_token_created` _(cloud)_ | T1098 |
+| Protected-branch tamper (GitLab)  | audit `protected_branch_removed` / `protected_branch_created` _(cloud)_ | T1562.001 |
+| Access/deploy-token backdoor (GitLab) | audit `project_access_token_created` / `personal_access_token_created` / `deploy_token_created` _(cloud)_ | T1098 |
 
 Growth is mechanical now that the drift gate exists: author the red+blue entry
 pair, mark the matching flat blocks, then `gen-views.sh`. For **on-prem** pairs the
