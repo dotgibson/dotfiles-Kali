@@ -22,6 +22,15 @@ GitHub Release; `sync-fanout.yml` then opens the Kali sync PR.
 
 ### Added
 
+- **npm registry** platform (3 companion-only red↔blue pairs) — the software supply-chain
+  seam, detected over the npm account/org audit log (`product: npm`, field `action`):
+  - `npm-malicious-publish` ↔ `npm-publish-audit` — publish a trojanized package version via
+    a compromised maintainer token; detect `package.publish` by an off-CI actor (T1195.002).
+  - `npm-owner-add` ↔ `npm-owner-audit` — add a rogue maintainer for durable publish rights;
+    detect `package.owner_add` / `team.user_add` (T1098).
+  - `npm-2fa-disable` ↔ `npm-2fa-audit` — disable require-2FA-to-publish (`npm access set
+    mfa=none`) so a stolen token ships quietly; detect `package.edit` `mfa=none` (T1562.001).
+
 - **Cloudflare edge** platform (3 companion-only red↔blue pairs) — detections over the
   Cloudflare account audit log (`product: cloudflare`, fields `action.type`/`resource.type`):
   - `cf-api-token` ↔ `cf-api-token-audit` — mint a long-lived API token for durable
@@ -118,7 +127,7 @@ GitHub Release; `sync-fanout.yml` then opens the Kali sync PR.
   - `gh-deploy-key-backdoor` ↔ `gh-cred-audit` — writable deploy key / fine-grained
     PAT for durable access; detect `repo.create_deploy_key` /
     `personal_access_token.access_granted` (T1098).
-- Corpus is now 62 paired concepts + 1 unpaired recon entry.
+- Corpus is now 65 paired concepts + 1 unpaired recon entry.
 
 ## [v1.4.0] - 2026-06-30
 
