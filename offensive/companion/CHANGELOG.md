@@ -22,6 +22,17 @@ GitHub Release; `sync-fanout.yml` then opens the Kali sync PR.
 
 ### Added
 
+- **PyPI registry** platform (3 companion-only red↔blue pairs) — the Python mirror of the npm
+  round, detected over the PyPI project journal (`product: pypi`, field `action`):
+  - `pypi-malicious-publish` ↔ `pypi-publish-audit` — upload a trojanized release via a stolen
+    API token (bypassing trusted publishing); detect `new release` not via a trusted publisher
+    (T1195.002).
+  - `pypi-role-add` ↔ `pypi-role-audit` — add a rogue Owner/Maintainer for durable publish
+    rights; detect journal `add Owner` / `add Maintainer` (T1098).
+  - `pypi-trusted-publisher` ↔ `pypi-trusted-publisher-audit` — register an attacker-controlled
+    OIDC trusted publisher for a credential-less publish backdoor; detect an add-`trusted
+    publisher` journal entry (T1098).
+
 - **npm registry** platform (3 companion-only red↔blue pairs) — the software supply-chain
   seam, detected over the npm account/org audit log (`product: npm`, field `action`):
   - `npm-malicious-publish` ↔ `npm-publish-audit` — publish a trojanized package version via
@@ -127,7 +138,7 @@ GitHub Release; `sync-fanout.yml` then opens the Kali sync PR.
   - `gh-deploy-key-backdoor` ↔ `gh-cred-audit` — writable deploy key / fine-grained
     PAT for durable access; detect `repo.create_deploy_key` /
     `personal_access_token.access_granted` (T1098).
-- Corpus is now 65 paired concepts + 1 unpaired recon entry.
+- Corpus is now 68 paired concepts + 1 unpaired recon entry.
 
 ## [v1.4.0] - 2026-06-30
 
