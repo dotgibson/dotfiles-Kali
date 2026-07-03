@@ -84,12 +84,12 @@ No mainstream tool ships attacks paired with the telemetry they trip.
 
 ## Corpus
 
-65 paired concepts + 1 unpaired recon entry (SMB enum), spanning Credential
+68 paired concepts + 1 unpaired recon entry (SMB enum), spanning Credential
 Access, Privilege Escalation, Lateral Movement, Persistence, Execution, Defense
 Evasion, Collection, Exfiltration, and Discovery — on-prem AD, a multi-cloud slice
 (Entra/M365, AWS, GCP), Kubernetes, Okta, Google Workspace, CI/CD (GitHub Actions,
 GitLab, Jenkins), the Harbor container registry, HashiCorp Vault, Terraform Cloud,
-the Snowflake data cloud, the Cloudflare edge, and the npm registry:
+the Snowflake data cloud, the Cloudflare edge, and the npm + PyPI package registries:
 
 | Attack (red)                      | Detection (blue)                                      | ATT&CK    |
 | --------------------------------- | ----------------------------------------------------- | --------- |
@@ -158,6 +158,9 @@ the Snowflake data cloud, the Cloudflare edge, and the npm registry:
 | Malicious package publish (npm)   | audit `package.publish` off-CI actor _(registry)_    | T1195.002 |
 | Rogue maintainer add (npm)        | audit `package.owner_add` / `team.user_add` _(registry)_ | T1098   |
 | Publish-2FA disable (npm)         | audit `package.edit` `mfa=none` _(registry)_         | T1562.001 |
+| Malicious release upload (PyPI)   | journal `new release` not via trusted publisher _(registry)_ | T1195.002 |
+| Rogue collaborator add (PyPI)     | journal `add Owner` / `add Maintainer` _(registry)_  | T1098     |
+| Rogue trusted publisher (PyPI)    | journal add `trusted publisher` _(registry)_         | T1098     |
 
 Growth is mechanical now that the drift gate exists: author the red+blue entry
 pair, mark the matching flat blocks, then `gen-views.sh`. For **on-prem** pairs the
