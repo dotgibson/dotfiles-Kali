@@ -15,7 +15,7 @@ publishing (OIDC) is the secure norm, so a release uploaded with a long-lived AP
 `new release` where `publisher_type` is not `trusted_publisher` — is the higher-signal case:
 it is how a stolen token ships a trojanized version, and it bypasses the OIDC path entirely.
 Alert on token-based uploads to projects that normally publish via trusted publishing, and
-on any first-ever uploader of a widely-depended package.
+on any first-ever uploader of a widely depended-on package.
 
 PyPI journal telemetry, companion-only — `PURPLE-TEAM.md` is on-prem Windows.
 
