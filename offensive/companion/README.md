@@ -157,7 +157,7 @@ the Snowflake data cloud, the Cloudflare edge, and the npm registry:
 | Malicious Worker deploy (Cloudflare) | audit `resource.type=worker`/`workers_script` `create`/`update` _(edge)_ | T1648     |
 | Malicious package publish (npm)   | audit `package.publish` off-CI actor _(registry)_    | T1195.002 |
 | Rogue maintainer add (npm)        | audit `package.owner_add` / `team.user_add` _(registry)_ | T1098   |
-| Publish-2FA disable (npm)         | audit `org.set_2fa` `two_factor_auth=disabled` _(registry)_ | T1562.001 |
+| Publish-2FA disable (npm)         | audit `package.edit` `mfa=none` _(registry)_         | T1562.001 |
 
 Growth is mechanical now that the drift gate exists: author the red+blue entry
 pair, mark the matching flat blocks, then `gen-views.sh`. For **on-prem** pairs the

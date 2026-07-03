@@ -28,8 +28,8 @@ GitHub Release; `sync-fanout.yml` then opens the Kali sync PR.
     a compromised maintainer token; detect `package.publish` by an off-CI actor (T1195.002).
   - `npm-owner-add` ↔ `npm-owner-audit` — add a rogue maintainer for durable publish rights;
     detect `package.owner_add` / `team.user_add` (T1098).
-  - `npm-2fa-disable` ↔ `npm-2fa-audit` — disable require-2FA-to-publish so a stolen token
-    ships quietly; detect `org.set_2fa` `two_factor_auth=disabled` (T1562.001).
+  - `npm-2fa-disable` ↔ `npm-2fa-audit` — disable require-2FA-to-publish (`npm access set
+    mfa=none`) so a stolen token ships quietly; detect `package.edit` `mfa=none` (T1562.001).
 
 - **Cloudflare edge** platform (3 companion-only red↔blue pairs) — detections over the
   Cloudflare account audit log (`product: cloudflare`, fields `action.type`/`resource.type`):

@@ -11,13 +11,13 @@ source: npm supply-chain evasion (2FA requirement tamper)
 pair: npm-2fa-audit
 ---
 
-The org/package "require two-factor to publish" setting is the control that stops a bare
-stolen token from shipping a release. Flip it to disabled and an automation token publishes
-with no second factor and no interactive prompt — quietly clearing the path for the
-malicious-publish step. The change writes an npm audit event `action=org.set_2fa` with the
-mode set to `disabled`. (Registry control plane — no slots.)
+A package's "require two-factor to publish" setting is the control that stops a bare stolen
+token from shipping a release. Set it to `none` and an automation token publishes with no
+second factor and no interactive prompt — quietly clearing the path for the malicious-publish
+step. The change writes an npm audit event `action=package.edit` with the publish `mfa`
+requirement set to `none`. (Registry control plane — no slots.)
 
 ```sh
-# drop the org 2FA-to-publish requirement so a stolen token can publish unattended
-npm org set <org> 2fa-mode=disabled
+# drop the package's 2FA-to-publish requirement so a stolen token can publish unattended
+npm access set mfa=none <package>
 ```

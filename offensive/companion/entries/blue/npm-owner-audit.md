@@ -20,6 +20,6 @@ takeover-then-ship shape.
 npm audit-log telemetry, companion-only — `PURPLE-TEAM.md` is on-prem Windows.
 
 ```spl
-index=npm sourcetype=npm:audit action IN (package.owner_add, team.user_add)
+index=npm sourcetype=npm:audit action IN ("package.owner_add", "team.user_add")
 | table _time, actor.name, action, package, target.user
 ```

@@ -10,15 +10,16 @@ source: npm supply-chain evasion (2FA requirement tamper)
 pair: npm-2fa-disable
 ---
 
-`action=org.set_2fa` with the mode set to `disabled` is the invariant — the publish
-protection being removed. Turning off require-2FA-to-publish is rare and high-impact (it
-gates whether a bare token can ship a release), so any disable warrants review, especially
-one soon followed by a `package.publish`. Manage the 2FA policy as a locked org setting and
-alert on any downgrade; a disable-then-publish-then-re-enable is the cover-tracks shape.
+`action=package.edit` with the publish `mfa` requirement set to `none` is the invariant —
+the publish protection being removed. Dropping require-2FA-to-publish is rare and high-impact
+(it gates whether a bare token can ship a release), so any change to `none` warrants review,
+especially one soon followed by a `package.publish`. Manage the publish-2FA requirement as a
+locked package setting and alert on any downgrade; a disable-then-publish-then-re-enable is
+the cover-tracks shape.
 
 npm audit-log telemetry, companion-only — `PURPLE-TEAM.md` is on-prem Windows.
 
 ```spl
-index=npm sourcetype=npm:audit action=org.set_2fa two_factor_auth=disabled
-| table _time, actor.name, action, org, two_factor_auth
+index=npm sourcetype=npm:audit action=package.edit mfa=none
+| table _time, actor.name, action, package, mfa
 ```
