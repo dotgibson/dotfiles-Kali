@@ -22,6 +22,16 @@ GitHub Release; `sync-fanout.yml` then opens the Kali sync PR.
 
 ### Added
 
+- **Slack** platform (3 companion-only red↔blue pairs) — the SaaS-collaboration seam, detected
+  over the Slack (Enterprise Grid) audit logs (`product: slack`, field `action`):
+  - `slack-malicious-app` ↔ `slack-app-audit` — install a broad-scope OAuth app for durable
+    message/file access; detect `app_installed` (T1098).
+  - `slack-external-share` ↔ `slack-external-share-audit` — invite an attacker-controlled
+    workspace into a channel via Slack Connect to exfil its history; detect
+    `shared_channel_invite_sent` / `_accepted` (T1567).
+  - `slack-2fa-disable` ↔ `slack-2fa-audit` — turn off enforced 2FA to weaken workspace auth;
+    detect `pref.two_factor_auth_changed` with 2FA off (T1562.001).
+
 - **PyPI registry** platform (3 companion-only red↔blue pairs) — the Python mirror of the npm
   round, detected over the PyPI project journal (`product: pypi`, field `action`):
   - `pypi-malicious-publish` ↔ `pypi-publish-audit` — upload a trojanized release via a stolen
@@ -138,7 +148,7 @@ GitHub Release; `sync-fanout.yml` then opens the Kali sync PR.
   - `gh-deploy-key-backdoor` ↔ `gh-cred-audit` — writable deploy key / fine-grained
     PAT for durable access; detect `repo.create_deploy_key` /
     `personal_access_token.access_granted` (T1098).
-- Corpus is now 68 paired concepts + 1 unpaired recon entry.
+- Corpus is now 71 paired concepts + 1 unpaired recon entry.
 
 ## [v1.4.0] - 2026-06-30
 
