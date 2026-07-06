@@ -1,228 +1,190 @@
-# 🔴 dotfiles-Kali
+<!-- Back to top link -->
+<a id="readme-top"></a>
 
-**A pentester's terminal, version-controlled.** The offensive role layer —
-recon → exploit → evasion, on a Kali/WSL2 base.
+<!-- Project Shields -->
+<div align="center"><nobr>
 
-`recon` · `exploit` · `evasion`
+[![dotgibson][dotgibson-shield]][dotgibson-url]<!--
+-->[![CI][ci-shield]][ci-url]<!--
+-->![Last Commit][lastcommit-shield]<!--
+-->[![Contributors][contributors-shield]][contributors-url]<!--
+-->[![Forks][forks-shield]][forks-url]<!--
+-->[![Stargazers][stars-shield]][stars-url]<!--
+-->[![Issues][issues-shield]][issues-url]<!--
+-->[![Showcase][showcase-shield]][showcase-url]<!--
+-->[![MIT License][license-shield]][license-url]<!--
+-->[![LinkedIn][linkedin-shield]][linkedin-url]
 
-[![showcase](https://img.shields.io/badge/showcase-live-7aa2f7?style=flat-square)](https://dotgibson.github.io/dotfiles-web/) ![red team](https://img.shields.io/badge/red--team-f7768e?style=flat-square)
+</nobr></div>
 
----
+<!-- PROJECT LOGO -->
+<br />
+<div align="center">
+  <a href="https://github.com/dotgibson/">
+    <img src="https://raw.githubusercontent.com/dotgibson/.github/main/profile/logo.png" alt="Logo" width="80" height="80">
+  </a>
 
-The Kali node of the dotfiles system. Unlike every other OS repo, this one
-stacks **three** layers instead of two:
+  <h3 align="center">🔴 dotfiles-Kali</h3>
 
-| Layer | Source | What it carries |
-|-------|--------|-----------------|
-| **Core** | vendored from `dotfiles-core` under `core/` | zsh modules, tmux, nvim, git, starship, mise, clip |
-| **OS-native** | `os/kali.*` | apt, clipboard delegation, paths, tmux/git tweaks (Kali is Debian-based) |
-| **Offensive (role)** | `offensive/` | engagement scaffolding + workspace workflow — **unique to this repo** |
+  <p align="center">
+    The offensive role layer — recon → exploit → evasion, on a Kali/WSL2 base.
+    <br />
+    <a href="https://dotgibson.github.io/dotfiles-web/docs/repos/dotfiles-Kali"><strong>Explore the docs »</strong></a>
+    <br />
+    <br />
+    <a href="https://dotgibson.github.io/dotfiles-web/purple/">Red ↔ Blue</a>
+    &middot;
+    <a href="https://github.com/dotgibson/dotfiles-Kali/issues/new?labels=bug">Report Bug</a>
+    &middot;
+    <a href="https://github.com/dotgibson/dotfiles-Kali/issues/new?labels=enhancement">Request Feature</a>
+  </p>
+</div>
 
-Built for **Kali on WSL2**.
+<!-- TABLE OF CONTENTS -->
+<details>
+  <summary>Table of Contents</summary>
+  <ol>
+    <li><a href="#about-the-project">About The Project</a></li>
+    <li><a href="#getting-started">Getting Started</a></li>
+    <li><a href="#whats-in-this-layer">What's In This Layer</a></li>
+    <li><a href="#contributing">Contributing</a></li>
+    <li><a href="#license">License</a></li>
+    <li><a href="#contact">Contact</a></li>
+  </ol>
+</details>
 
-## The one rule that matters
+<!-- ABOUT THE PROJECT -->
+## About The Project
 
-**This is a public showcase repo. Engagement and client data never live in it.**
+**`dotfiles-Kali` is the offensive Role layer** — the one node in the fleet that
+stacks **three** layers instead of two. The shared **Core** (zsh, tmux, Neovim,
+git, starship, mise) is vendored under `core/` via `git subtree`; on top sits the
+Kali OS layer (Debian-family `apt`, built for WSL2); and on top of _that_ sits a
+unique **offensive** stage — engagement scaffolding and workspace workflow for
+**authorized** engagements.
 
-All engagement data lives under `~/engagements/` (outside the repo). The repo
-ships only tooling, config, and empty workspace scaffolding. The paranoid
-`.gitignore` is defense-in-depth. Keep engagement data out of the repo.
+> **The one rule that matters:** this is a public showcase repo, so **engagement
+> and client data never live in it.** Everything goes under `~/engagements/`
+> (outside any git tree); the paranoid `.gitignore` is only a backstop. Every
+> tool here is for authorized work with written rules of engagement — the
+> scope-first scaffolding exists to keep that discipline mechanical.
 
-## Loader integration
+The full docs live on the [documentation site][docs]; the defensive mirror is
+[`dotfiles-Defense`](https://github.com/dotgibson/dotfiles-Defense).
 
-The offensive layer adds one stage to the zsh loader, slotted in just before
-local overrides:
+The system is three layers; Kali carries all three:
 
-```
-tools → aliases → functions → fzf → bindings → plugins → op → os → offensive → local
-```
+| Layer | Lives in | Owns |
+| --- | --- | --- |
+| **Core** | [`dotfiles-core`](https://github.com/dotgibson/dotfiles-core), vendored under `core/` | zsh, tmux, nvim, git, starship — identical everywhere |
+| **OS-native** | `os/kali.*` (Debian-family `apt`, WSL2) | package manager, clipboard, paths |
+| **Role (offensive)** | `offensive/` — **unique to this repo** | engagement scaffolding + workspace workflow |
 
-`offensive/offensive.zsh` → `~/.config/zsh/offensive.zsh`. It holds workflow
-helpers (e.g. `mkengagement`, `eng`, `logshell`, `nmapsweep`, `bhce`) —
-no exploit code, no attack automation; just where your output goes.
+<p align="right">(<a href="#readme-top">back to top</a>)</p>
 
-## WSL2: read before you run a listener
+<!-- GETTING STARTED -->
+## Getting Started
 
-WSL2 is NAT'd by default, so a reverse shell / handler / responder / file
-server started in Kali is **not reachable from your LAN** — traffic hits the
-Windows host, not Kali. Fix it with **mirrored networking** (Windows 11 22H2+):
-copy `wsl/windows.wslconfig.example` to `%UserProfile%\.wslconfig`, then
-`wsl.exe --shutdown` and reopen. The distro-side `wsl/wsl.conf` (systemd +
-default user + interop) is installed automatically by `bootstrap.sh`.
+### Prerequisites
 
-GUI tools (Burp, BloodHound UI) work under WSLg but are smoother on the Windows
-host — the default tool list is headless-first.
+**Kali on WSL2**, and **Git**. WSL2 is NAT'd by default, so a listener / reverse
+shell / C2 in Kali isn't reachable from your LAN until you enable **mirrored
+networking** in the _Windows-side_ `%UserProfile%\.wslconfig` (`networkingMode=mirrored`,
+Win11 22H2+) — **not** `/etc/wsl.conf`.
 
-## Install (fresh repo lifecycle)
+### Installation
 
 ```sh
-# 1. land these files in ~/dotfiles-Kali, then:
+git clone https://github.com/dotgibson/dotfiles-Kali ~/dotfiles-Kali
 cd ~/dotfiles-Kali
-git init -b main
-git config user.name  "Your Name"
-git config user.email "you@example.com"
-git add . && git commit -m "Kali OS + offensive layers"
-
-# 2. vendor Core (one time)
-git subtree add --prefix=core <dotfiles-core remote> main --squash
-
-# 3. provision + wire
-./bootstrap.sh                 # full (add --no-offensive to skip heavy tools)
-
-# 4. apply WSL config
-wsl.exe --shutdown             # from a Windows terminal, then reopen Kali
-# (also drop windows.wslconfig.example at %UserProfile%\.wslconfig for mirrored net)
+./bootstrap.sh                 # apt base + offensive tools + Core/OS/offensive symlinks
+wsl.exe --shutdown             # from Windows, after dropping windows.wslconfig.example
 ```
 
-Keeping Core current later is the same as every repo: from `dotfiles-core`,
-`./scripts/sync-core.sh dotfiles-Kali`, then `./bootstrap.sh --links-only` here.
+`core/` is a vendored subtree and is **already present** in a clone — there is no
+submodule step. Flags: `--no-offensive` (base + symlinks, skip the heavy tool
+install), `--links-only` (just re-create symlinks).
 
-## bootstrap flags
+<p align="right">(<a href="#readme-top">back to top</a>)</p>
 
-- `./bootstrap.sh` — apt base + offensive tools + symlinks
-- `./bootstrap.sh --no-offensive` — base + symlinks, skip the heavy tool install
-- `./bootstrap.sh --links-only` — just (re)create symlinks
+<!-- WHAT'S IN THIS LAYER -->
+## What's In This Layer
 
-# The offensive layer (Kali specifics)
+The offensive stage loads after `os` and before `local` (`… os offensive local`),
+so OS paths/clipboard resolve first and a machine override still wins:
 
-> This section documents what makes `dotfiles-Kali` different from every other
-> repo in the system. Everything here is the **role layer** — it does not, and
-> must not, exist in Core. (If it changes when the *operating system* changes
-> it's OS-native; if it's identical everywhere it's Core; what's left — the
-> offensive tradecraft scaffolding — is this.)
+- `offensive/offensive.zsh` — the role-stage helpers (`mkengagement`, `eng`,
+  `logshell`, `nmapsweep`, `bhce`, …), each `HAVE_*`-guarded — no exploit code
+- `offensive/hacktheplanet`, `ippsec`, `exploitdev`, `evasion` — the vim-folded
+  field references (`htp` / `ipp` / `xdev` / `evade`)
+- `offensive/companion/` — the ATT&CK-tagged red↔blue corpus, a **vendored
+  subtree of [htpx](https://github.com/dotgibson/htpx)** (browsed with `htpx`)
+- `PURPLE-TEAM.md` — the defensive mirror of `hacktheplanet` (Splunk/Sentinel)
+- `core/` — vendored from `dotfiles-core` (read-only here; edit upstream)
 
-Kali is not stamped from the Fedora template. It's Debian-family (apt) and is
-the only repo that carries an **offensive stage** in the zsh loader. Where every
-other repo's `.zshrc` sources `… os local`, Kali inserts one more:
+The tradecraft — the phase → ATT&CK → tool map, the OPSEC hygiene, and the tools
+that bite (`nxc`/NetExec, BloodHound CE) — is written up on the hub:
 
-```
-tools → aliases → functions → fzf → bindings → plugins → op → os → offensive → local
-```
+> **[→ Offensive methodology][methodology]** · **[dotfiles-Kali on the hub][repo-docs]**
 
-`offensive` loads after `os` (so OS paths/clipboard are already resolved) and
-before `local` (so a machine-specific override still wins).
+<p align="right">(<a href="#readme-top">back to top</a>)</p>
 
----
+<!-- CONTRIBUTING -->
+## Contributing
 
-## What the layer ships
+This is a **Role layer** stacked on Core + an OS layer, so two vendored trees are
+off-limits and the rest is the offensive stage:
 
-| File | Role |
-|------|------|
-| `offensive/offensive.zsh` | sourced in the `offensive` stage — `HAVE_*` detection, tool ergonomics, engagement scaffolding |
-| `offensive/tmux/tmux-eng.sh` | `prefix + e` popup — fuzzy-jump to an engagement session (twin of Core's sessionizer) |
-| `offensive/hacktheplanet` | CTF/HTB/engagement command cheatsheet — copy-paste syntax per service/port (the field reference under the methodology map). Folds by section in vim; symlinked to `~/hacktheplanet`, opened with `htp` |
-| `offensive/ippsec` | **the method** — workflow habits + signature moves distilled from IppSec's HTB catalog (the recon loop, shell stabilization, the scripted pseudo-shell, the unsticking playbook). The altitude *above* the command refs. Same fold UX; symlinked to `~/ippsec`, opened with `ipp` |
-| `offensive/templates/pseudo-shell.py` | reusable Python `cmd.Cmd` pseudo-shell for blind/awkward RCE (SSTI/injection/deserialization) — IppSec's signature; copy into an engagement's `exploit/` and wire up the request + capture regex |
-| `install/offensive-packages.txt` | the apt tool list (installed after the OS + Core layers) |
-| `OFFENSIVE-METHODOLOGY.md` | the phase → MITRE ATT&CK → tool map behind the layer |
-| `PURPLE-TEAM.md` | the defensive mirror of `hacktheplanet` — Splunk/Sentinel detections + event-ID reference for each attack (purple-team perspective / red OPSEC) |
-| `offensive/companion` | the structured, ATT&CK-tagged red↔blue companion (the paired sibling of `hacktheplanet`/`PURPLE-TEAM.md`) — a **vendored `git subtree` of [dotgibson/htpx](https://github.com/dotgibson/htpx)** (provenance in `companion.lock`; resync with `scripts/sync-companion.sh`). Symlinked to `~/companion`, browsed with `htpx` |
+1. **Never hand-edit `core/` or `offensive/companion/`.** Both are vendored
+   subtrees (`dotfiles-core` and [htpx](https://github.com/dotgibson/htpx)),
+   overwritten on the next sync. Fix them **upstream**, then re-sync.
+2. **Offensive config goes in the `offensive` stage**, not in `core/`. If it's
+   identical everywhere it's Core; if it changes with the OS it's the OS layer.
+3. **Keep the discipline.** No payloads, loot, or targets in the repo; scope and
+   authorization come first. **Green the lint gate** (shellcheck + `bash -n` /
+   `zsh -n`; vendored trees excluded).
 
-Same discipline as Core: every alias/function touching an optional tool is
-guarded by a `HAVE_*` flag, so the file is **inert** on a box where the tool
-isn't installed instead of erroring on shell start.
+Bugs and ideas: open an
+[issue](https://github.com/dotgibson/dotfiles-Kali/issues).
 
----
+<p align="right">(<a href="#readme-top">back to top</a>)</p>
 
-## Commands
+<!-- LICENSE -->
+## License
 
-| Command | What it does |
-|---------|--------------|
-| `mkengagement <name>` | scaffold a dated engagement workspace under `$ENGAGEMENTS_DIR`, seed `scope/scope.txt`, open it in `$EDITOR`, and `cd` in (sets `$ENGAGEMENT`) |
-| `eng` | fzf-jump between existing engagements; previews the scope sheet |
-| `bhce <dc> <user> <pass\|:hash> [domain]` | run NetExec's BloodHound CE collection, dropping a CE-ready zip into `loot/bloodhound/` |
-| `nmapsweep <target\|CIDR>` | conservative `-sCV` sweep, all-formats output into `./nmap/` |
-| `logshell` | record a `script(1)` transcript into the engagement's `notes/` for the audit trail |
-| `smb` / `ldap` / `winrm` | shorthands for `nxc <proto>` |
-| `seclists` | jump to `$SECLISTS_DIR` with the fzf preview stack |
-| `htp` / `ipp` / `xdev` / `evade` | open the field refs (`~/hacktheplanet` / `~/ippsec` / `~/exploitdev` / `~/evasion`) in `$EDITOR` |
-| `htpx` | fuzzy-pick an attack from the companion, preview it beside its paired blue detection, fill `{{slots}}` from `$RHOST`/`$LHOST`/… and copy |
-| `note "<text>"` | timestamped append to the engagement's `notes.md` (IppSec note discipline); `note` with no args opens it |
-| `cde` | `cd` back to the active engagement tree (`$ENGAGEMENT`) |
-| `lhost [iface]` | print your attacker/VPN IP (the `<your-ip>` for reverse shells) — prefers `tun0`, falls back to primary iface |
-| `ttyup` | print the TTY-upgrade stabilization sequence with your local rows/cols pre-filled |
-| `rocks <keyword>` | open an `ippsec.rocks` search for a technique/keyword |
+Distributed under the MIT License. See [`LICENSE`](LICENSE) for more information.
 
-## tmux bindings
+<p align="right">(<a href="#readme-top">back to top</a>)</p>
 
-| Binding | Popup |
-|---------|-------|
-| `prefix + f` | **projects** — Core sessionizer (unchanged) |
-| `prefix + e` | **engagements** — create-or-switch to an engagement session |
-| `prefix + w` | **everything** — Core menu, now surfaces engagements as `◆` rows when `~/engagements` exists |
+<!-- CONTACT -->
+## Contact
 
-`prefix + e` lives here (the binding is in `os/kali.conf`, the script in
-`offensive/tmux/`, symlinked to `~/.config/tmux/scripts/tmux-eng.sh` by
-`bootstrap.sh`). `prefix + w` is **Core** but engagement-*agnostic*: the `◆`
-section only renders where an engagements dir exists, so it stays portable and
-syncs cleanly to all eight Core-vendoring repos.
+Garrett Allen - [@gerrrrt](https://x.com/gerrrrt) - <garrettallen2@gmail.com>
 
----
+Project Link: [dotgibson](https://github.com/dotgibson/)
 
-## Engagement workspace
+<p align="right">(<a href="#readme-top">back to top</a>)</p>
 
-Engagement **data never lives in this repo.** It lives in `$ENGAGEMENTS_DIR`
-(default `~/engagements`), outside any git tree; the repo's paranoid
-`.gitignore` is only a backstop. `mkengagement` lays out:
-
-```
-~/engagements/<YYYYMMDD>-<slug>/
-  scope/scope.txt        ← written & opened FIRST (ROE, auth ref, window, contacts)
-  recon/  scans/  web/    exploit/  screenshots/
-  loot/{creds,hashes,bloodhound}
-  report/  notes.md
-```
-
-> Rule zero: `scope/scope.txt` is created before anything else for a reason.
-> Installing a tool is not permission to point it at anything — fill in scope,
-> in-scope/out-of-scope, the authorization reference and a "stop" contact first.
-
----
-
-## Tooling notes that will actually bite you
-
-**CrackMapExec is gone — it's `nxc` now.** CME was archived in 2023; the
-maintained successor is **NetExec** (`nxc`), and it's the single
-highest-leverage tool in the kit — auth, enumeration, lateral movement,
-credential extraction and BloodHound collection across SMB/LDAP/WinRM/MSSQL/
-RDP/FTP/SSH in one scriptable interface. Old `cme` muscle memory just becomes
-`nxc`.
-
-**BloodHound is now BloodHound CE.** Legacy 4.x collectors don't cleanly ingest
-into Community Edition. The `bhce` helper drives nxc's `--bloodhound` module,
-which packages a CE-ready zip. Run BloodHound CE itself from its official
-docker-compose — it's a Postgres-backed web app, not an apt package.
-
-**Upstream-only tools.** A few move faster than the Kali repo or aren't packaged
-— Sliver, Havoc, Caldera, sometimes BBOT/ligolo-ng. `offensive-packages.txt`
-flags these with their install method (same pattern Core already uses for
-starship/atuin on some distros).
-
-**WSL2 is NAT'd.** A listener / reverse shell / C2 in Kali under WSL2 isn't
-reachable from your LAN until you set `networkingMode=mirrored` in the
-**Windows-side** `%UserProfile%\.wslconfig` (Win11 22H2+) — *not*
-`/etc/wsl.conf`. This bites every Responder/Sliver/Metasploit handler setup.
-
-**Debian binary renames** (handled by Core already): `bat` runs as `batcat`,
-`fd-find` installs `fdfind`. Core's `tools.zsh` resolves both, so aliases and
-config work unchanged here.
-
----
-
-## Authorization
-
-Every tool in this layer is for **authorized engagements with written rules of
-engagement only.** The scaffolding (scope-first workspace, `logshell` audit
-trail, data kept out of the repo) exists to keep that discipline mechanical
-rather than optional. See `OFFENSIVE-METHODOLOGY.md` for the full phase → ATT&CK
-mapping and the OPSEC hygiene baked into the layer.
-
-## Engagement workflow
-
-```sh
-mkengagement acme-external      # scaffold ~/engagements/YYYYMMDD-acme-external, open scope/scope.txt
-eng                             # fzf-jump between existing engagements; cd + sets $ENGAGEMENT
-cd "$ENGAGEMENT/recon"          # navigate into a subdir of the active engagement
-logshell                        # record shell session via script(1) into notes/ for audit trail
-nmapsweep 10.10.10.0/24         # conservative -sCV sweep, output into ./nmap/
-```
+<!-- Markdown Links & Images -->
+[repo-docs]: https://dotgibson.github.io/dotfiles-web/docs/repos/dotfiles-Kali
+[methodology]: https://dotgibson.github.io/dotfiles-web/docs/reference/offensive-methodology
+[dotgibson-shield]: https://img.shields.io/github/v/release/dotgibson/dotfiles-Kali?style=flat-square&label=dotgibson&labelColor=181717&logo=data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAIAAAD8GO2jAAAF1klEQVR4nLSWbUxT7RnHr9PT09MXSltaoC9QXkqR16Iwhb0Iw8VYYE7jPri5aBaZzpmFZbpolpn4QeMyM%2BM%2B7MVt0Q9LNJIlxCzqxGWS6aKAig51vBQKIi3QltpCS0%2Fbc879pD1N3%2Bnz4fG5Pl2977v%2F331d131f5%2BZrddWQZAgAgy9uCRlefICzT6GeIsP%2FXF15kahmu9JglGmLRQoRQdIQWgu77BuWGe%2Fo%2BOqym8odApaWomTT1%2Bl2HqirahaTuJ9kQMggkgYhDRGfRiQDZBi9fuf52%2BD7l1b3ZhRcmq%2FMnBHmibuO7fvWoTalVoDjQRwL8RGgEOtzB0MbtBDnkRjGR0AgTK%2BQfNukr1LKXlhXKZpJSxTKGoFSq9vf16tQ8%2FiEh094Vu0L449mLGMup20DRWuFYVCiFm%2BvU36nTbOlMB%2BnCDxIOBzhvv6nFpc3TS0dUKDRHzh1Jk9O8wlPYN326Oa%2FJobnN8shAOxqKjrdXa8WSnGKWPewR%2FuHLG5P8oKUFJHi%2FH19F6UKEQ%2BnbJap27%2B%2BtWR15VAHgLkV%2F%2F0xW6OuQCfNE4PgmyX6f0xZKYbJDuj43lmtoYqHU%2FaZdwNXr4eoUG51zqgw%2B%2FCtrbm0UCeRynBhqVj2YC4RNC%2FuqStbKkydAODzeO7%2B6QYTpnOIYgB729R729RY9DAGafb0wDOHLwAA5vKK1mJNFoCpsxeLLn%2Fy91uU359719%2FfVXL%2BSM35IzU9rcXciCcQujz0imOfbGhOB0jkGo2hFQBW7Quzr0Zzq6vyBT%2FuKY%2BHErfBmQWLK1Lhr6l1OkleCqC0poPb%2FuTwv3OrA8DPDhgkokgLmLX77o86kqcGJmaj5xjr1JWlAAr1Js75MDEGAAI%2B1mvWX%2F1JY29XmYDPS5ZoNsrM24si1xSh3%2FRbGBYlz%2F73g41ztqliqYv1onyVHgDocMjjXASAKycavlqnZBHa2ajcasjv%2B8MbAPhRV9nI5MezB41crIPPHWOW9Gtl9XhDDCMCokIqSwGQ4shvyucFhEQCnqlSdm9k%2BdKt6XM%2FqO7aof7t8YbIIW5SHdpVIhUTAOAP0L8bmM3MHgJwByidQCgnhSmAqOEYnQ8AgRBr%2FuUzKsgggIs3pyVCfkeTCgAmFtaNOgm39C%2F3511r2W8JYvIAJbIaAwQ3vKAEoVgRaTQIBYKxqxgMs6euvdUXiQDgeHd5rV7K1fb2kC2rOgaYghQBMJ5grI3HUGuuhQiNIOWq8sy%2FLTgCKplgT0ZtCyprWw7%2FvKCyNr6yQqYg8cim59a9KQDnwv84R1%2F99UwAzsMya4vxeOYLN7YePGG%2BcAPjxXS%2BoavknFfOlRTAh8nHKNqLa1v2ZwK6dxQZtHk5ahu3%2FcYmLsoh%2B%2FsUgN%2BztDQzEvkYFBurGnan%2FS1%2B1P98L1FbxLIPzh193X%2FtwbmjiGUBYHd5nVFRCABPlxdtfh%2B3LHGKxof%2Bqo90C6yj58yi9Tm1kWjr94ZXsGhTuDuynAx2z0245yY4X06Kf9HWFd0N%2BuPbsUR64%2B3a57Erig2qIoOIlJSUNE69GWTZRFufXvRNL%2Fo2ywyJE1fMP6xWqHBEP5yfvP7%2FbAAAsFufG01mkVCqkGvLyrbNTD2mw9kfDckmE0oudx9rUZfhiF5Zd%2F%2F00QDF0NkBTJhanB3e0riHJIRKhXarqWfdu%2Bx0WnOot1ftuNR90lhQzEO0L7B2YvCm3b%2BWNI%2ByffSLq757%2BPcquYaIvBtgdcXycuzO9MzTFdccd9IwDNMVlDaXbzPXtxsVhQRDEQzl8i6d%2Buf12Y%2BONDVMo6vOfHWJxHLz3l811u8WAEZABCNAAHSI8n8k2HABKRJjLJ8JECxFMAE%2BHXhiGb7yn35vcCNDKVsEcSuv%2BEpn%2B7Etla0CwAQIOBLBhrkt85kAnwm8mX95e%2FTOa9vUZiIxQI43r0Kura9uN5SYNMoyuVDGZ2nK73C65iy28Rezo44152bSKYAvz3ifVA1lDn0WAAD%2F%2F%2FWvXexgMwqgAAAAAElFTkSuQmCC
+[dotgibson-url]: https://github.com/dotgibson/dotfiles-Kali/releases/latest
+[ci-shield]: https://img.shields.io/github/actions/workflow/status/dotgibson/dotfiles-Kali/lint.yml?branch=main&style=flat-square&logo=githubactions&logoColor=white&label=CI
+[ci-url]: https://github.com/dotgibson/dotfiles-Kali/actions/workflows/lint.yml
+[lastcommit-shield]: https://img.shields.io/github/last-commit/dotgibson/dotfiles-Kali?branch=main&style=flat-square&logo=git&logoColor=white
+[contributors-shield]: https://img.shields.io/github/contributors/dotgibson/dotfiles-Kali.svg?style=flat-square&logo=github
+[contributors-url]: https://github.com/dotgibson/dotfiles-Kali/graphs/contributors
+[forks-shield]: https://img.shields.io/github/forks/dotgibson/dotfiles-Kali.svg?style=flat-square&logo=github
+[forks-url]: https://github.com/dotgibson/dotfiles-Kali/network/members
+[stars-shield]: https://img.shields.io/github/stars/dotgibson/dotfiles-Kali.svg?style=flat-square&logo=github
+[stars-url]: https://github.com/dotgibson/dotfiles-Kali/stargazers
+[issues-shield]: https://img.shields.io/github/issues/dotgibson/dotfiles-Kali?style=flat-square&logo=github
+[issues-url]: https://github.com/dotgibson/dotfiles-Kali/issues
+[showcase-shield]: https://img.shields.io/badge/showcase-live-7aa2f7?style=flat-square
+[showcase-url]: https://dotgibson.github.io/dotfiles-web
+[license-shield]: https://img.shields.io/github/license/dotgibson/dotfiles-Kali.svg?style=flat-square
+[license-url]: https://github.com/dotgibson/dotfiles-Kali/blob/main/LICENSE
+[linkedin-shield]: https://img.shields.io/badge/LinkedIn-blue?style=flat-square&logo=linkedin&logoColor=white
+[linkedin-url]: https://linkedin.com/in/garrettallen2
+[docs]: https://dotgibson.github.io/dotfiles-web/
