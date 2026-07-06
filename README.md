@@ -199,13 +199,13 @@ Project Link: [dotgibson](https://github.com/dotgibson/)
 [license-shield]: https://img.shields.io/github/license/dotgibson/dotfiles-Kali.svg?style=flat-square
 [license-url]: https://github.com/dotgibson/dotfiles-Kali/blob/main/LICENSE
 [docs]: https://dotgibson.github.io/dotfiles-web/docs
-[python-shield]: https://img.shields.io/github/v/tag/python/cpython?sort=semver&style=flat-square&logo=python&logoColor=white&label=Python&labelColor=3776AB&color=3D59A1
+[python-shield]: https://img.shields.io/github/v/release/python/cpython?style=flat-square&logo=python&logoColor=white&label=Python&labelColor=3776AB&color=3D59A1
 [python-url]: https://github.com/python/cpython
 [kali-shield]: https://img.shields.io/badge/Kali_Linux-557C94?style=flat-square&logo=kalilinux&logoColor=white
 [kali-url]: https://www.kali.org
 [nxc-shield]: https://img.shields.io/github/v/release/Pennyw0rth/NetExec?style=flat-square&logo=gnometerminal&logoColor=24283B&label=NetExec&labelColor=BB9AF7&color=3D59A1
 [nxc-url]: https://github.com/Pennyw0rth/NetExec
-[bloodhound-shield]: https://img.shields.io/github/v/release/SpecterOps/BloodHound?style=flat-square&logo=gnometerminal&logoColor=24283B&label=BloodHound_CE&labelColor=BB9AF7&color=3D59A1
+[bloodhound-shield]: https://img.shields.io/github/v/release/SpecterOps/BloodHound?style=flat-square&logo=gnometerminal&logoColor=24283B&label=BloodHound%20CE&labelColor=BB9AF7&color=3D59A1
 [bloodhound-url]: https://github.com/SpecterOps/BloodHound
 [impacket-shield]: https://img.shields.io/github/v/release/fortra/impacket?style=flat-square&logo=gnometerminal&logoColor=24283B&label=Impacket&labelColor=BB9AF7&color=3D59A1
 [impacket-url]: https://github.com/fortra/impacket
