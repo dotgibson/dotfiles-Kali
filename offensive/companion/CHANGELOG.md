@@ -20,6 +20,24 @@ GitHub Release; `sync-fanout.yml` then opens the Kali sync PR.
 
 ## [Unreleased]
 
+## [v2.0.0] - 2026-07-06
+
+### Changed
+
+- **README second-pass polish.** The `dotgibson` shield now tracks the
+  `dotfiles-core` release version; dropped the showcase and LinkedIn shields for a
+  one-line header (LinkedIn moved to Contact); the docs links now point at the
+  documentation hub root (`/docs`); and About gained `Languages` (Markdown) +
+  `Tools` (MITRE ATT&CK, fzf) subsections.
+- **README rebuilt as a lean showcase landing page.** Brought the README up to the
+  `dotgibson` exemplar bar — a reference-style shields header, the org logo, a
+  collapsible TOC, then a lean body (what htpx is and how it's vendored into
+  `dotfiles-Kali`, Getting Started, a representative corpus slice, and the
+  entry-first contribution workflow). The full 70+-row corpus table is trimmed to
+  a representative sample that points at `entries/` and the on-site red↔blue view.
+  Added a `.markdownlint.jsonc` (mirrored from Core) scoping the showcase HTML via
+  MD033 `allowed_elements`.
+
 ### Added
 
 - **Slack** platform (3 companion-only red↔blue pairs) — the SaaS-collaboration seam, detected

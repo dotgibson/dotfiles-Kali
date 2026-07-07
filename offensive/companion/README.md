@@ -1,230 +1,204 @@
-# ⚔️ htpx
+<!-- Back to top link -->
+<a id="readme-top"></a>
 
-**Every attack, beside its detection.** An ATT&CK-tagged, red↔blue paired
-corpus — browse an attack beside its detection, fill `{{slots}}`, clip.
+<!-- Project Shields -->
+<div align="center"><nobr>
 
-`fzf` · `mitre-attack` · `purple-team`
+[![dotgibson][dotgibson-shield]][dotgibson-url]<!--
+-->[![CI][ci-shield]][ci-url]<!--
+-->![Last Commit][lastcommit-shield]<!--
+-->[![Contributors][contributors-shield]][contributors-url]<!--
+-->[![Forks][forks-shield]][forks-url]<!--
+-->[![Stargazers][stars-shield]][stars-url]<!--
+-->[![Issues][issues-shield]][issues-url]<!--
+-->[![MIT License][license-shield]][license-url]
 
-[![showcase](https://img.shields.io/badge/showcase-live-7aa2f7?style=flat-square)](https://dotgibson.github.io/dotfiles-web/) ![purple team](https://img.shields.io/badge/purple--team-bb9af7?style=flat-square)
+</nobr></div>
 
----
+<!-- PROJECT LOGO -->
+<br />
+<div align="center">
+  <a href="https://github.com/dotgibson/">
+    <img src="https://raw.githubusercontent.com/dotgibson/.github/main/profile/logo.png" alt="Logo" width="80" height="80">
+  </a>
 
-**companion** — structured, ATT&CK-tagged, red↔blue-paired pentest reference
+  <h3 align="center">⚔️ htpx</h3>
 
-Restructures the offensive corpus into machine-readable entries so the same
-content can be **searched, ATT&CK-tagged, target-substituted, and paired with its
-blue detection** — the shape a standalone terminal companion would take.
+  <p align="center">
+    Every attack, beside its detection — an ATT&CK-tagged, red↔blue paired corpus.
+    <br />
+    <a href="https://dotgibson.github.io/dotfiles-web/purple/"><strong>Explore the red ↔ blue view »</strong></a>
+    <br />
+    <br />
+    <a href="https://dotgibson.github.io/dotfiles-web/docs">Documentation</a>
+    &middot;
+    <a href="https://github.com/dotgibson/htpx/issues/new?labels=bug">Report Bug</a>
+    &middot;
+    <a href="https://github.com/dotgibson/htpx/issues/new?labels=enhancement">Request Feature</a>
+  </p>
+</div>
 
-For the paired red↔blue **attack/detection slice it covers, the entries are the
-source of truth**: where they overlap `hacktheplanet` / `PURPLE-TEAM.md`, the flat
-files' blocks are _generated_ from the entries (inside `companion:gen` markers) and
-CI rejects drift. Everything those flat files hold that _isn't_ a clean paired
-attack — the tradecraft prose, dorks, multi-step chains — stays hand-authored and
-canonical there. See _Source of truth_ below for the full model.
+<!-- TABLE OF CONTENTS -->
+<details>
+  <summary>Table of Contents</summary>
+  <ol>
+    <li>
+      <a href="#about-the-project">About The Project</a>
+      <ul>
+        <li><a href="#languages">Languages</a></li>
+        <li><a href="#tools">Tools</a></li>
+      </ul>
+    </li>
+    <li><a href="#getting-started">Getting Started</a></li>
+    <li><a href="#the-corpus">The Corpus</a></li>
+    <li><a href="#contributing">Contributing</a></li>
+    <li><a href="#license">License</a></li>
+    <li><a href="#contact">Contact</a></li>
+  </ol>
+</details>
 
-## What's here
+<!-- ABOUT THE PROJECT -->
+## About The Project
 
-```
-companion/
-├── htpx                     # fzf browser: search → preview attack + its detection → fill slots → clip
-├── gen-views.sh             # render entry-backed blocks into the flat views (+ --check drift gate)
-└── entries/
-    ├── red/*.md             # attacks   (frontmatter + command template)
-    └── blue/*.md            # detections (frontmatter + SPL), paired back to red
-```
+**`htpx` is the structured, ATT&CK-tagged, red↔blue-paired corpus** behind the
+[dotgibson](https://github.com/dotgibson/) dotfiles system. Every entry is one
+attack or one detection, in Markdown with typed YAML frontmatter, and each attack
+is **paired** to the telemetry it trips. Browse it with the `htpx` fzf front end:
+pick an attack, preview it **beside its blue detection**, fill the `{{slots}}`
+from your target env, and copy. No mainstream tool ships attacks paired with the
+detections they set off — that purple pivot is the point.
 
-This directory is **host-agnostic** (host-agnostic so it lives in its own repo `dotgibson/htpx` and is vendored back like `core/`): `gen-views.sh`'s flat-view targets default to
-this repo's `PURPLE-TEAM.md` + `offensive/hacktheplanet` (repo-root-relative) but
-can be overridden with
-`$COMPANION_TARGETS` (and a target that isn't present is skipped, so a standalone
-checkout with no flat views is still green), and `htpx` copies via the first of
-`clip`/`pbcopy`/`wl-copy`/`xclip`/`xsel` it finds (stdout otherwise) rather than
-requiring the Core `clip` helper.
+It is **host-agnostic**, so it lives in its own repo and is vendored back into
+[`dotfiles-Kali`](https://github.com/dotgibson/dotfiles-Kali) at
+`offensive/companion/` via `git subtree` (like Core is vendored into the OS
+repos). It's the **source of truth** for the paired slice: `gen-views.sh`
+generates the marked blocks in Kali's `hacktheplanet` / `PURPLE-TEAM.md` from the
+entries, and CI drift-gates them. See the fleet's
+[red ↔ blue view][purple] and the [offensive methodology][methodology] for the
+wider context.
 
-## The entry schema (Markdown + YAML frontmatter)
+| Piece | Role |
+| --- | --- |
+| `htpx` | fzf browser: search → preview attack + its detection → fill slots → clip |
+| `entries/red/*.md` | attacks (frontmatter + command template with `{{slots}}`) |
+| `entries/blue/*.md` | detections (frontmatter + SPL/KQL), paired back to a red entry |
+| `gen-views.sh` | renders entry-backed blocks into the flat views (`--check` drift-gates) |
 
-Typed metadata up top (greppable, `yq`-queryable); raw copy-paste content in the
-body (renders in `bat`/`glow`, `rg`-searchable). One file per entry.
+### Languages
 
-```yaml
-id: stable kebab key
-title: human label
-section: matches a hacktheplanet fold name
-phase: engagement phase
-attack: { tactic: TA0006, techniques: [T1558.003] } # MITRE ATT&CK
-platform: [windows, linux, network]
-source: citation
-pair: <id of the paired entry in the other colour> # or null
-```
+- [![Markdown][markdown-shield]][markdown-url]
 
-Command templates normalize the corpus's `<angle-bracket>` placeholders to
-`{{slots}}` (`{{rhost}}`, `{{lhost}}`, `{{user}}`, `{{password}}`, `{{domain}}`,
-`{{hostname}}`, `{{nthash}}`, `{{port}}`, `{{share}}`).
+Entries are Markdown + YAML frontmatter; detections carry Splunk SPL / KQL.
 
-## Using it
+### Tools
+
+- [![MITRE ATT&CK][attack-shield]][attack-url]
+- [![fzf][fzf-shield]][fzf-url]
+
+<p align="right">(<a href="#readme-top">back to top</a>)</p>
+
+<!-- GETTING STARTED -->
+## Getting Started
+
+Inside the dotfiles system, `htpx` is already on your shell (bootstrap symlinks
+`companion/` to `~/companion` and defines the `htpx` function). To run it from a
+standalone checkout:
 
 ```sh
+git clone https://github.com/dotgibson/htpx ~/htpx
+cd ~/htpx
 export RHOST=10.10.10.5 DOMAIN=corp.local USER_T=svc_sql PASS='…'
-htpx            # pick an attack; preview shows it + its blue detection;
-                # the command is slot-filled and copied via `clip`
+./htpx            # pick an attack; the preview shows it + its blue detection,
+                  # slot-filled and copied via clip/pbcopy/wl-copy/xclip/xsel
 ```
 
-`htpx` is on the shell as of bootstrap: `companion/` symlinks to `~/companion`
-and `offensive.zsh` defines an `htpx` function. From a checkout you can also run
-`./htpx` directly. It needs `fzf`; `bat` (preview) and `clip` (Core clipboard)
-are used if present, else it falls back to `cat`/stdout. No `yq` dependency —
-`htpx` reads only the scalar top-level fields it needs (`title:`, `pair:`) from
-the frontmatter with `awk` (the nested `attack:` block is for humans/greppers).
+It needs `fzf`; `bat` (preview) and a clipboard helper are used if present, else
+it falls back to `cat`/stdout. No `yq` dependency — it reads only the scalar
+frontmatter fields it needs with `awk`.
 
-## The differentiator
+<p align="right">(<a href="#readme-top">back to top</a>)</p>
 
-The `pair:` field makes the **purple pivot** nearly free: selecting an attack
-previews its detection right beside it (see Kerberoast ↔ `4769`, DCSync ↔ `4662`).
-No mainstream tool ships attacks paired with the telemetry they trip.
+<!-- THE CORPUS -->
+## The Corpus
 
-## Corpus
+70-plus paired attack/detection concepts (plus a recon entry), spanning
+Credential Access, Privilege Escalation, Lateral Movement, Persistence, Defense
+Evasion, Collection, Exfiltration, and Discovery — across on-prem AD, a multi-cloud
+slice (Entra/M365, AWS, GCP), Kubernetes, Okta, Google Workspace, CI/CD (GitHub
+Actions, GitLab, Jenkins), Harbor, HashiCorp Vault, Terraform Cloud, Snowflake,
+Cloudflare, the npm + PyPI registries, and Slack. A representative slice:
 
-71 paired concepts + 1 unpaired recon entry (SMB enum), spanning Credential
-Access, Privilege Escalation, Lateral Movement, Persistence, Execution, Defense
-Evasion, Collection, Exfiltration, and Discovery — on-prem AD, a multi-cloud slice
-(Entra/M365, AWS, GCP), Kubernetes, Okta, Google Workspace, CI/CD (GitHub Actions,
-GitLab, Jenkins), the Harbor container registry, HashiCorp Vault, Terraform Cloud,
-the Snowflake data cloud, the Cloudflare edge, the npm + PyPI package registries,
-and Slack:
+| Attack (red) | Detection (blue) | ATT&CK |
+| --- | --- | --- |
+| Kerberoast SPNs | `4769` RC4 TGS | T1558.003 |
+| DCSync | `4662` replication | T1003.006 |
+| Pass-the-hash lateral | `4624` type-3 fan-out | T1550.002 |
+| AD CS ESC1 (certipy) | `4886` SAN mismatch | T1649 |
+| Device-code phishing (Entra) | sign-in `deviceCode` flow (KQL) | T1528 |
+| Malicious package publish (npm) | audit `package.publish` off-CI actor | T1195.002 |
 
-| Attack (red)                      | Detection (blue)                                      | ATT&CK    |
-| --------------------------------- | ----------------------------------------------------- | --------- |
-| Kerberoast SPNs                   | `4769` RC4 TGS                                        | T1558.003 |
-| AS-REP roast                      | `4771` pre-auth `0x18`                                | T1558.004 |
-| Password spray (kerbrute)         | `4625` one source, many accounts                      | T1110.003 |
-| DCSync                            | `4662` replication                                    | T1003.006 |
-| Pass-the-hash lateral             | `4624` type-3 fan-out                                 | T1550.002 |
-| NTLM relay                        | `4624` workstation mismatch                           | T1557.001 |
-| Coerce DC (PetitPotam/printerbug) | `5145` named-pipe access                              | T1187     |
-| AD CS ESC1 (certipy)              | `4886` SAN mismatch                                   | T1649     |
-| Remote LSASS dump (lsassy)        | `4656` dump-shaped handle                             | T1003.001 |
-| RDP session hijack (tscon)        | `4688` tscon `/dest:rdp-tcp#`                         | T1563.002 |
-| Shadow Credentials (certipy)      | `5136` msDS-KeyCredentialLink write                   | T1556     |
-| RBCD (impacket)                   | `5136` msDS-AllowedToActOnBehalfOfOtherIdentity write | T1098     |
-| Unconstrained delegation → DC TGT | `4624` DC machine-acct → non-DC _(soft)_              | T1558     |
-| DPAPI domain backup key           | `5145` protected_storage pipe                         | T1555     |
-| SeImpersonate → SYSTEM (Potato)   | `4688` service-acct → SYSTEM shell _(moderate)_       | T1134.001 |
-| Device-code phishing (Entra)      | Entra sign-in `deviceCode` flow _(KQL, cloud)_        | T1528     |
-| Golden Ticket (forged TGT)        | `4769` TGS with no preceding `4768`                   | T1558.001 |
-| GPP cpassword (SYSVOL)            | `5145` SYSVOL `Groups.xml` read                       | T1552.006 |
-| NTDS.dit dump (ntdsutil/VSS)      | `4688` ntdsutil/vssadmin + `8222`                     | T1003.003 |
-| WMI exec (impacket-wmiexec)       | `4688` `WmiPrvSE.exe` child shell                     | T1047     |
-| Scheduled-task persistence        | `4698` task created (suspicious action)               | T1053.005 |
-| WMI subscription persistence      | Sysmon `19`/`20`/`21` consumer/binding               | T1546.003 |
-| Silver Ticket (forged TGS)        | `4624` Kerberos logon, no `4769` _(soft)_            | T1558.002 |
-| DCShadow (rogue DC)               | `4742` `GC/` SPN write + `5137`/`4662`               | T1207     |
-| Illicit consent grant (Entra)     | Entra audit "Consent to application" _(KQL, cloud)_  | T1528     |
-| SP credential backdoor (Entra)    | Entra audit "Add SP credentials" _(KQL, cloud)_     | T1098.001 |
-| Privileged pod → node escape (K8s) | audit: privileged/hostPID/hostPath pod create       | T1610/T1611 |
-| Pod exec / attach (K8s)           | audit: `pods/exec` subresource create                | T1609     |
-| Cluster-admin binding (K8s)       | audit: roleRef `cluster-admin` binding               | T1098     |
-| MFA reset → takeover (Okta)       | System Log `user.mfa.factor.reset_all`               | T1556.006 |
-| API token persistence (Okta)      | System Log `system.api_token.create`                 | T1098     |
-| Rogue IdP backdoor (Okta)         | System Log `system.idp.lifecycle.create`             | T1556     |
-| IAM access-key backdoor (AWS)     | CloudTrail `CreateAccessKey` actor≠target _(cloud)_  | T1098.001 |
-| Console takeover (AWS)            | CloudTrail Create/UpdateLoginProfile _(cloud)_       | T1098     |
-| SA key creation (GCP)            | Cloud Audit `CreateServiceAccountKey` _(cloud)_      | T1098.001 |
-| Rogue self-hosted runner (GitHub) | audit `self_hosted_runner.created` _(cloud)_         | T1543     |
-| Branch-protection tamper (GitHub) | audit `protected_branch.destroy` / `protected_branch.policy_override` _(cloud)_ | T1562.001 |
-| Deploy-key/PAT backdoor (GitHub)  | audit `repo.create_deploy_key` / `personal_access_token.access_granted` _(cloud)_ | T1098 |
-| Backdoored image over trusted tag (Harbor) | audit `operation=push` artifact _(registry)_       | T1525     |
-| Robot-account backdoor (Harbor)   | audit `operation=create` `resource_type=robot` _(registry)_ | T1098     |
-| Artifact deletion (Harbor)        | audit `operation=delete` artifact/repository _(registry)_ | T1070     |
-| Rogue runner association (GitLab) | audit `set_runner_associated_projects` _(cloud)_     | T1543     |
-| Protected-branch tamper (GitLab)  | audit `protected_branch_removed` / `protected_branch_created` _(cloud)_ | T1562.001 |
-| Access/deploy-token backdoor (GitLab) | audit `project_access_token_created` / `personal_access_token_created` / `deploy_token_created` _(cloud)_ | T1098 |
-| Bulk KV secret read (Vault)       | audit `read` breadth over `secret/` paths _(secrets)_ | T1555     |
-| Rogue AppRole backdoor (Vault)    | audit create/update on `auth/approle/role/` _(secrets)_ | T1098     |
-| Audit-device disable (Vault)      | audit `delete` on `sys/audit/` path _(secrets)_      | T1562.001 |
-| Rogue agent pool (Terraform)      | audit `agent_pool` `create` _(IaC)_                  | T1543     |
-| Org/team token backdoor (Terraform) | audit `authentication_token` `create` _(IaC)_      | T1098     |
-| Variable injection (Terraform)    | audit `variable` `create`/`update` _(IaC)_           | T1072     |
-| Script Console RCE (Jenkins)      | audit `/script`/`/scriptText` request _(CI)_         | T1059     |
-| User API token backdoor (Jenkins) | audit `generateNewToken` request _(CI)_              | T1098     |
-| Job/pipeline backdoor (Jenkins)   | audit `/createItem`/`/job/<name>/configSubmit` request _(CI)_   | T1072     |
-| Data exfil via COPY INTO (Snowflake) | `QUERY_HISTORY` `QUERY_TYPE=UNLOAD` _(data)_       | T1567.002 |
-| Backdoor user + ACCOUNTADMIN (Snowflake) | `QUERY_HISTORY` `CREATE_USER`/priv `GRANT` _(data)_ | T1136.003 |
-| Network-policy tamper (Snowflake) | `QUERY_HISTORY` `NETWORK POLICY` change _(data)_      | T1562.007 |
-| Illicit OAuth grant (Workspace)   | token audit `authorize` _(cloud)_                    | T1528     |
-| Super-admin grant (Workspace)     | admin audit `GRANT_DELEGATED_ADMIN_PRIVILEGES` _(cloud)_ | T1098.003 |
-| External mail forwarding (Workspace) | audit `email_forwarding_out_of_domain` _(cloud)_  | T1114.003 |
-| API token backdoor (Cloudflare)   | audit `resource.type=api_token` `create` _(edge)_    | T1098     |
-| WAF/firewall rule disable (Cloudflare) | audit `firewall_rule`/`ruleset` `delete`/`update` _(edge)_ | T1562.001 |
-| Malicious Worker deploy (Cloudflare) | audit `resource.type=worker`/`workers_script` `create`/`update` _(edge)_ | T1648     |
-| Malicious package publish (npm)   | audit `package.publish` off-CI actor _(registry)_    | T1195.002 |
-| Rogue maintainer add (npm)        | audit `package.owner_add` / `team.user_add` _(registry)_ | T1098   |
-| Publish-2FA disable (npm)         | audit `package.edit` `mfa=none` _(registry)_         | T1562.001 |
-| Malicious release upload (PyPI)   | journal `new release` not via trusted publisher _(registry)_ | T1195.002 |
-| Rogue collaborator add (PyPI)     | journal `add Owner` / `add Maintainer` _(registry)_  | T1098     |
-| Rogue trusted publisher (PyPI)    | journal add `trusted publisher` _(registry)_         | T1098     |
-| Malicious app install (Slack)     | audit `app_installed` broad scopes _(SaaS)_          | T1098     |
-| External shared channel (Slack)   | audit `shared_channel_invite_sent` _(SaaS)_          | T1567     |
-| 2FA enforcement disable (Slack)   | audit `pref.two_factor_auth_changed` off _(SaaS)_    | T1562.001 |
+The full set lives in `entries/red|blue/*.md` — the `pair:` field is what makes
+the purple pivot free (Kerberoast ↔ `4769`, DCSync ↔ `4662`, …).
 
-Growth is mechanical now that the drift gate exists: author the red+blue entry
-pair, mark the matching flat blocks, then `gen-views.sh`. For **on-prem** pairs the
-blue detection generates into `PURPLE-TEAM.md` (cloud pairs are companion-only —
-see below). The red side generates into
-`hacktheplanet` whenever its commands are slot-mappable (even multi-step — see
-RBCD); only commands that carry inline comments or are scattered across existing
-folds stay hand-authored. Either way the entry powers `htpx` and the paired
-preview. **Net-new** techniques (Shadow Credentials, RBCD) were authored as
-entries first and flowed into _both_ flat views via the bridge.
+<p align="right">(<a href="#readme-top">back to top</a>)</p>
 
-**Cloud pairs are companion-only.** The device-code-phishing pair is the first
-outside on-prem AD: its detection is an Entra sign-in log (KQL), which doesn't
-belong in `PURPLE-TEAM.md`'s Windows-Security-log SPL frame, so it isn't generated
-into either flat view — it lives only in the entries, where `htpx` still gives the
-full purple pivot. A clean demonstration that the entries are a superset of the
-on-prem flat references (and a natural seam for a standalone/cloud split).
+<!-- CONTRIBUTING -->
+## Contributing
 
-## Source of truth (decided — the hybrid)
+`htpx` is the **source of truth** for the paired red↔blue slice, so the workflow
+is entry-first:
 
-The "do the entries become canonical?" question is **resolved**, but not as the
-original binary. `hacktheplanet` is 489 lines and most of it is _tradecraft prose_
-— dorks, enum sequencing, conditional advice, warnings — that doesn't fit the
-entry schema; generating the whole file from rigid entries would either lose that
-prose or bloat the schema into freeform markdown. So:
+1. **Author the pair.** Add the red + blue entry (`entries/red|blue/*.md`) with
+   ATT&CK tags and a `pair:` link; normalize command placeholders to `{{slots}}`.
+2. **Regenerate the views.** Mark the matching blocks in the flat files and run
+   `gen-views.sh`; `gen-views.sh --check` (CI) fails on drift. Prose outside the
+   markers stays hand-authored and canonical.
+3. **Edit here, not in Kali.** The vendored copy at `dotfiles-Kali`'s
+   `offensive/companion/` is overwritten on the next sync — fix it here, then
+   Kali's `scripts/sync-companion.sh` pulls the change into that copy.
 
-- **Entries are canonical for the paired red↔blue attack/detection slice only.**
-  That's the part that genuinely _is_ `{id, title, attack, command}`-shaped and
-  benefits from ATT&CK tags, slot-fill, and the purple pivot.
-- **The flat files stay canonical for everything else** — the prose the schema
-  can't hold.
-- **Where they overlap, the entry wins via generation.** A flat file opts a block
-  in with `companion:gen ID` … `companion:end ID` markers — HTML comments in
-  markdown (`PURPLE-TEAM.md`), `#` comments in the shell-style `hacktheplanet`.
-  `gen-views.sh` regenerates the marked blocks from the entry, and
-  `gen-views.sh --check` (run in CI, `.github/workflows/companion.yml`) fails on
-  drift. Content outside the markers is never touched.
+Bugs and ideas: open an
+[issue](https://github.com/dotgibson/htpx/issues).
 
-This kills drift on the overlap _without_ a 60-entry migration and _without_
-giving up the rich prose. Workflow: edit the entry → `gen-views.sh` → commit both.
+<p align="right">(<a href="#readme-top">back to top</a>)</p>
 
-**Both sides are wired.** The render shape keys off the entry's colour:
+<!-- LICENSE -->
+## License
 
-- **Blue** (`PURPLE-TEAM.md`) — `**title**` + prose + a fenced `spl` detection
-  block. Its SPL has no target slots, so no placeholder translation.
-- **Red** (`hacktheplanet`) — just the raw command lines in that file's terse,
-  command-first house style, with the entry's `{{slots}}` reverse-mapped to its
-  `<angle-bracket>` vocabulary (`{{rhost}}`→`<ip_address>`, `{{nthash}}`→`<NThash>`,
-  …; see `SLOT_TO_ANGLE` in `gen-views.sh`). Only attacks whose commands are
-  contiguous and map cleanly are marked (Kerberoast, AS-REP, DCSync); ones whose
-  lines are scattered across folds or carry inline notes (SMB enum, pass-the-hash)
-  stay hand-authored — the entry owns only what it cleanly owns.
+Distributed under the MIT License. See [`LICENSE`](LICENSE) for more information.
 
-## Open decisions (before this graduates from MVP)
+<p align="right">(<a href="#readme-top">back to top</a>)</p>
 
-1. **ATT&CK tagging is 100% manual** — neither source carries technique IDs today.
-   Tagging both colours with the _same_ technique IDs turns `pair:` into a
-   derivable join (not just a hand-kept link).
-2. **Standalone vs in-repo — resolved.** This now lives in its own repo
-   (`dotgibson/htpx`) and is vendored back into `dotfiles-Kali` at
-   `offensive/companion/` via `git subtree` (provenance in Kali's `companion.lock`,
-   resynced with `scripts/sync-companion.sh`). Kali consumes it; this repo is the
-   source of truth.
+<!-- CONTACT -->
+## Contact
+
+Garrett Allen - [@gerrrrt](https://x.com/gerrrrt) - <garrettallen2@gmail.com> - [LinkedIn](https://linkedin.com/in/garrettallen2)
+
+Project Link: [dotgibson](https://github.com/dotgibson/)
+
+<p align="right">(<a href="#readme-top">back to top</a>)</p>
+
+<!-- Markdown Links & Images -->
+[purple]: https://dotgibson.github.io/dotfiles-web/purple/
+[methodology]: https://dotgibson.github.io/dotfiles-web/docs/reference/offensive-methodology
+[dotgibson-shield]: https://img.shields.io/github/v/release/dotgibson/dotfiles-core?style=flat-square&label=dotgibson&labelColor=181717&logo=data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAIAAAD8GO2jAAAF1klEQVR4nLSWbUxT7RnHr9PT09MXSltaoC9QXkqR16Iwhb0Iw8VYYE7jPri5aBaZzpmFZbpolpn4QeMyM%2BM%2B7MVt0Q9LNJIlxCzqxGWS6aKAig51vBQKIi3QltpCS0%2Fbc879pD1N3%2Bnz4fG5Pl2977v%2F331d131f5%2BZrddWQZAgAgy9uCRlefICzT6GeIsP%2FXF15kahmu9JglGmLRQoRQdIQWgu77BuWGe%2Fo%2BOqym8odApaWomTT1%2Bl2HqirahaTuJ9kQMggkgYhDRGfRiQDZBi9fuf52%2BD7l1b3ZhRcmq%2FMnBHmibuO7fvWoTalVoDjQRwL8RGgEOtzB0MbtBDnkRjGR0AgTK%2BQfNukr1LKXlhXKZpJSxTKGoFSq9vf16tQ8%2FiEh094Vu0L449mLGMup20DRWuFYVCiFm%2BvU36nTbOlMB%2BnCDxIOBzhvv6nFpc3TS0dUKDRHzh1Jk9O8wlPYN326Oa%2FJobnN8shAOxqKjrdXa8WSnGKWPewR%2FuHLG5P8oKUFJHi%2FH19F6UKEQ%2BnbJap27%2B%2BtWR15VAHgLkV%2F%2F0xW6OuQCfNE4PgmyX6f0xZKYbJDuj43lmtoYqHU%2FaZdwNXr4eoUG51zqgw%2B%2FCtrbm0UCeRynBhqVj2YC4RNC%2FuqStbKkydAODzeO7%2B6QYTpnOIYgB729R729RY9DAGafb0wDOHLwAA5vKK1mJNFoCpsxeLLn%2Fy91uU359719%2FfVXL%2BSM35IzU9rcXciCcQujz0imOfbGhOB0jkGo2hFQBW7Quzr0Zzq6vyBT%2FuKY%2BHErfBmQWLK1Lhr6l1OkleCqC0poPb%2FuTwv3OrA8DPDhgkokgLmLX77o86kqcGJmaj5xjr1JWlAAr1Js75MDEGAAI%2B1mvWX%2F1JY29XmYDPS5ZoNsrM24si1xSh3%2FRbGBYlz%2F73g41ztqliqYv1onyVHgDocMjjXASAKycavlqnZBHa2ajcasjv%2B8MbAPhRV9nI5MezB41crIPPHWOW9Gtl9XhDDCMCokIqSwGQ4shvyucFhEQCnqlSdm9k%2BdKt6XM%2FqO7aof7t8YbIIW5SHdpVIhUTAOAP0L8bmM3MHgJwByidQCgnhSmAqOEYnQ8AgRBr%2FuUzKsgggIs3pyVCfkeTCgAmFtaNOgm39C%2F3511r2W8JYvIAJbIaAwQ3vKAEoVgRaTQIBYKxqxgMs6euvdUXiQDgeHd5rV7K1fb2kC2rOgaYghQBMJ5grI3HUGuuhQiNIOWq8sy%2FLTgCKplgT0ZtCyprWw7%2FvKCyNr6yQqYg8cim59a9KQDnwv84R1%2F99UwAzsMya4vxeOYLN7YePGG%2BcAPjxXS%2BoavknFfOlRTAh8nHKNqLa1v2ZwK6dxQZtHk5ahu3%2FcYmLsoh%2B%2FsUgN%2BztDQzEvkYFBurGnan%2FS1%2B1P98L1FbxLIPzh193X%2FtwbmjiGUBYHd5nVFRCABPlxdtfh%2B3LHGKxof%2Bqo90C6yj58yi9Tm1kWjr94ZXsGhTuDuynAx2z0245yY4X06Kf9HWFd0N%2BuPbsUR64%2B3a57Erig2qIoOIlJSUNE69GWTZRFufXvRNL%2Fo2ywyJE1fMP6xWqHBEP5yfvP7%2FbAAAsFufG01mkVCqkGvLyrbNTD2mw9kfDckmE0oudx9rUZfhiF5Zd%2F%2F00QDF0NkBTJhanB3e0riHJIRKhXarqWfdu%2Bx0WnOot1ftuNR90lhQzEO0L7B2YvCm3b%2BWNI%2ByffSLq757%2BPcquYaIvBtgdcXycuzO9MzTFdccd9IwDNMVlDaXbzPXtxsVhQRDEQzl8i6d%2Buf12Y%2BONDVMo6vOfHWJxHLz3l811u8WAEZABCNAAHSI8n8k2HABKRJjLJ8JECxFMAE%2BHXhiGb7yn35vcCNDKVsEcSuv%2BEpn%2B7Etla0CwAQIOBLBhrkt85kAnwm8mX95e%2FTOa9vUZiIxQI43r0Kura9uN5SYNMoyuVDGZ2nK73C65iy28Rezo44152bSKYAvz3ifVA1lDn0WAAD%2F%2F%2FWvXexgMwqgAAAAAElFTkSuQmCC
+[dotgibson-url]: https://github.com/dotgibson/dotfiles-core/releases/latest
+[ci-shield]: https://img.shields.io/github/actions/workflow/status/dotgibson/htpx/ci.yml?branch=main&style=flat-square&logo=githubactions&logoColor=white&label=CI
+[ci-url]: https://github.com/dotgibson/htpx/actions/workflows/ci.yml
+[lastcommit-shield]: https://img.shields.io/github/last-commit/dotgibson/htpx?branch=main&style=flat-square&logo=git&logoColor=white
+[contributors-shield]: https://img.shields.io/github/contributors/dotgibson/htpx.svg?style=flat-square&logo=github
+[contributors-url]: https://github.com/dotgibson/htpx/graphs/contributors
+[forks-shield]: https://img.shields.io/github/forks/dotgibson/htpx.svg?style=flat-square&logo=github
+[forks-url]: https://github.com/dotgibson/htpx/network/members
+[stars-shield]: https://img.shields.io/github/stars/dotgibson/htpx.svg?style=flat-square&logo=github
+[stars-url]: https://github.com/dotgibson/htpx/stargazers
+[issues-shield]: https://img.shields.io/github/issues/dotgibson/htpx?style=flat-square&logo=github
+[issues-url]: https://github.com/dotgibson/htpx/issues
+[license-shield]: https://img.shields.io/github/license/dotgibson/htpx.svg?style=flat-square
+[license-url]: https://github.com/dotgibson/htpx/blob/main/LICENSE
+[markdown-shield]: https://img.shields.io/badge/Markdown-000000?style=flat-square&logo=markdown&logoColor=white
+[markdown-url]: https://commonmark.org
+[attack-shield]: https://img.shields.io/badge/MITRE_ATT%26CK-C22035?style=flat-square
+[attack-url]: https://attack.mitre.org
+[fzf-shield]: https://img.shields.io/github/v/release/junegunn/fzf?style=flat-square&logo=gnometerminal&logoColor=24283B&label=fzf&labelColor=BB9AF7&color=3D59A1
+[fzf-url]: https://github.com/junegunn/fzf
