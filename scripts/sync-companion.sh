@@ -9,9 +9,15 @@
 # the convenience wrapper the lock's own header points at — nothing it does is
 # magic, just the documented `git subtree pull --squash` + the sha bump in one step.
 #
-#   scripts/sync-companion.sh                  # pull from the URL derived from companion.lock
+#   scripts/sync-companion.sh                  # pull companion_branch (main) from the lock's URL
 #   scripts/sync-companion.sh <remote-or-url>  # pull from a specific remote / URL / local clone
+#   scripts/sync-companion.sh --ref vX.Y.Z     # pull an EXACT ref (tag/sha) instead of the branch
 #   scripts/sync-companion.sh --check          # report whether upstream is ahead; touch nothing
+#
+# --ref exists for a REPRODUCIBLE backfill of a specific htpx release: `git subtree pull`
+# takes any ref, but a bare run always pulls companion_branch's TIP, so backfilling an OLD
+# release tag would silently vendor CURRENT main instead of that tag's tree. htpx's
+# sync-fanout workflow passes the released tag via --ref so the fan-out is exact (G10).
 #
 # A bare run leaves you with TWO things to do before it's a finished change:
 #   1. eyeball the diff under offensive/companion/, and
@@ -35,12 +41,16 @@ die() { echo "sync-companion: $*" >&2; exit 1; }
 
 CHECK=0
 REMOTE_ARG=""
-for a in "$@"; do
-  case "$a" in
+REF_OPT=""
+while [[ $# -gt 0 ]]; do
+  case "$1" in
     --check) CHECK=1 ;;
-    -*) die "unknown option: $a" ;;
-    *) [[ -z "$REMOTE_ARG" ]] || die "only one remote/URL may be given"; REMOTE_ARG="$a" ;;
+    --ref) shift; [[ $# -gt 0 ]] || die "--ref needs a value (a branch, tag, or sha)"; REF_OPT="$1" ;;
+    --ref=*) REF_OPT="${1#--ref=}" ;;
+    -*) die "unknown option: $1" ;;
+    *) [[ -z "$REMOTE_ARG" ]] || die "only one remote/URL may be given"; REMOTE_ARG="$1" ;;
   esac
+  shift
 done
 
 [[ -f "$LOCK" ]] || die "$LOCK not found — is the companion subtree vendored?"
@@ -57,6 +67,12 @@ old_sha="$(lock_field companion_sha)"
 # the lock silently unchanged. Require the line up front so that can't happen.
 [[ -n "$old_sha" ]] || die "companion_sha missing/empty in $LOCK — add a 'companion_sha=' line before syncing."
 
+# The ref to pull: an explicit --ref (a release tag/sha, for a reproducible backfill of an
+# EXACT htpx version) wins over companion_branch (the default rolling `main`). git subtree
+# takes any ref; passing a tag is what lets an OLD-tag fan-out vendor THAT tag's tree
+# instead of main's tip (G10).
+REF="${REF_OPT:-$branch}"
+
 # Remote precedence: explicit arg → a git remote literally named in the lock →
 # the GitHub HTTPS URL derived from companion_repo. The arg lets you sync from a
 # fork, an ssh remote, or a local htpx clone without editing the lock.
@@ -68,23 +84,29 @@ else
   remote="https://github.com/$repo.git"
 fi
 
-echo "sync-companion: prefix=$PREFIX  remote=$remote  branch=$branch"
+echo "sync-companion: prefix=$PREFIX  remote=$remote  ref=$REF"
 echo "sync-companion: locked at  $old_sha"
 
 # --check: peek at upstream without mutating the tree or the lock. Fetch the tip
 # and compare; report ahead / up-to-date. Exit 0 either way (informational) unless
 # the fetch itself fails.
 if [[ "$CHECK" == 1 ]]; then
-  # Resolve to an explicit refs/heads/<branch> so ls-remote can't match a same-named
-  # tag (a bare name is a ref PATTERN), and GIT_TERMINAL_PROMPT=0 so it never blocks
-  # on a credential prompt — same idiom as test/check-core-freshness.sh.
-  case "$branch" in
-    refs/*) ref="$branch" ;;
-    *) ref="refs/heads/$branch" ;;
-  esac
-  upstream_sha="$(GIT_TERMINAL_PROMPT=0 git ls-remote "$remote" "$ref" 2>/dev/null | awk 'NR==1{print $1}')"
-  [[ -n "$upstream_sha" ]] || die "could not read $branch from $remote"
-  echo "sync-companion: upstream ${branch} tip is $upstream_sha"
+  # Resolve the ls-remote pattern. For the DEFAULT branch, anchor to refs/heads/<branch>
+  # so a same-named tag can't match (a bare name is a ref PATTERN). For an explicit --ref
+  # (which may be a tag OR a branch), ls-remote it bare — matches refs/tags/<ref> or
+  # refs/heads/<ref>; we only report ahead/current, so either is fine. GIT_TERMINAL_PROMPT=0
+  # so it never blocks on a credential prompt — same idiom as test/check-core-freshness.sh.
+  if [[ -n "$REF_OPT" ]]; then
+    lsref="$REF"
+  else
+    case "$branch" in
+      refs/*) lsref="$branch" ;;
+      *) lsref="refs/heads/$branch" ;;
+    esac
+  fi
+  upstream_sha="$(GIT_TERMINAL_PROMPT=0 git ls-remote "$remote" "$lsref" 2>/dev/null | awk 'NR==1{print $1}')"
+  [[ -n "$upstream_sha" ]] || die "could not read $REF from $remote"
+  echo "sync-companion: upstream ${REF} tip is $upstream_sha"
   if [[ "$upstream_sha" == "$old_sha" ]]; then
     echo "sync-companion: up to date — nothing to pull."
   else
@@ -95,13 +117,14 @@ fi
 
 # A subtree pull rewrites tracked files and makes a merge commit, so the tree must
 # be clean first — fail early with a clear message rather than letting git do it.
-git diff --quiet && git diff --cached --quiet \
-  || die "working tree not clean — commit or stash first (git subtree pull needs a clean tree)."
+if ! git diff --quiet || ! git diff --cached --quiet; then
+  die "working tree not clean — commit or stash first (git subtree pull needs a clean tree)."
+fi
 
 before="$(git rev-parse HEAD)"
 
-echo "sync-companion: git subtree pull --prefix=$PREFIX $remote $branch --squash"
-git subtree pull --prefix="$PREFIX" "$remote" "$branch" --squash
+echo "sync-companion: git subtree pull --prefix=$PREFIX $remote $REF --squash"
+git subtree pull --prefix="$PREFIX" "$remote" "$REF" --squash
 
 after="$(git rev-parse HEAD)"
 if [[ "$before" == "$after" ]]; then
