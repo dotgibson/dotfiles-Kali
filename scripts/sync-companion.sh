@@ -11,13 +11,15 @@
 #
 #   scripts/sync-companion.sh                  # pull companion_branch (main) from the lock's URL
 #   scripts/sync-companion.sh <remote-or-url>  # pull from a specific remote / URL / local clone
-#   scripts/sync-companion.sh --ref vX.Y.Z     # pull an EXACT ref (tag/sha) instead of the branch
+#   scripts/sync-companion.sh --ref vX.Y.Z     # pull an EXACT tag/branch instead of companion_branch
 #   scripts/sync-companion.sh --check          # report whether upstream is ahead; touch nothing
 #
 # --ref exists for a REPRODUCIBLE backfill of a specific htpx release: `git subtree pull`
-# takes any ref, but a bare run always pulls companion_branch's TIP, so backfilling an OLD
-# release tag would silently vendor CURRENT main instead of that tag's tree. htpx's
-# sync-fanout workflow passes the released tag via --ref so the fan-out is exact (G10).
+# (and --check's `git ls-remote`) resolve a tag or branch NAME, so pass a release tag —
+# NOT a raw commit sha (ls-remote lists refs, it can't look up a bare sha). A bare run
+# always pulls companion_branch's TIP, so backfilling an OLD release tag would silently
+# vendor CURRENT main instead of that tag's tree. htpx's sync-fanout workflow passes the
+# released tag via --ref so the fan-out is exact (G10).
 #
 # A bare run leaves you with TWO things to do before it's a finished change:
 #   1. eyeball the diff under offensive/companion/, and
@@ -45,8 +47,14 @@ REF_OPT=""
 while [[ $# -gt 0 ]]; do
   case "$1" in
     --check) CHECK=1 ;;
-    --ref) shift; [[ $# -gt 0 ]] || die "--ref needs a value (a branch, tag, or sha)"; REF_OPT="$1" ;;
-    --ref=*) REF_OPT="${1#--ref=}" ;;
+    --ref)
+      shift
+      [[ $# -gt 0 ]] || die "--ref needs a value (a branch or tag)"
+      case "$1" in -*) die "--ref needs a value, got another option: $1" ;; esac
+      REF_OPT="$1" ;;
+    --ref=*)
+      REF_OPT="${1#--ref=}"
+      [[ -n "$REF_OPT" ]] || die "--ref= needs a non-empty value (a branch or tag)" ;;
     -*) die "unknown option: $1" ;;
     *) [[ -z "$REMOTE_ARG" ]] || die "only one remote/URL may be given"; REMOTE_ARG="$1" ;;
   esac
@@ -67,10 +75,10 @@ old_sha="$(lock_field companion_sha)"
 # the lock silently unchanged. Require the line up front so that can't happen.
 [[ -n "$old_sha" ]] || die "companion_sha missing/empty in $LOCK — add a 'companion_sha=' line before syncing."
 
-# The ref to pull: an explicit --ref (a release tag/sha, for a reproducible backfill of an
+# The ref to pull: an explicit --ref (a release tag, for a reproducible backfill of an
 # EXACT htpx version) wins over companion_branch (the default rolling `main`). git subtree
-# takes any ref; passing a tag is what lets an OLD-tag fan-out vendor THAT tag's tree
-# instead of main's tip (G10).
+# and ls-remote resolve a tag/branch NAME; passing a tag is what lets an OLD-tag fan-out
+# vendor THAT tag's tree instead of main's tip (G10).
 REF="${REF_OPT:-$branch}"
 
 # Remote precedence: explicit arg → a git remote literally named in the lock →
