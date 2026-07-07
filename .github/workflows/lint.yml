@@ -22,4 +22,7 @@ jobs:
   lint:
     uses: dotgibson/dotfiles-core/.github/workflows/lint-call.yml@v3
     with:
-      extra_ls_files_excludes: "':!:offensive/companion/**'"
+      # Bare git pathspec — NO surrounding single quotes. lint-call.yml word-splits this
+      # into a bash array, so literal quotes would become part of the token and the
+      # exclude would silently not match (the companion subtree would then be linted).
+      extra_ls_files_excludes: ":!:offensive/companion/**"
