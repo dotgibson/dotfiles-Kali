@@ -29,19 +29,20 @@
 # core.lock did NOT before any PR is opened.
 #
 # ── PINNED TO THE RELEASED REF ──────────────────────────────────────────────────
-# At release time the tag == the main tip (auto-tag.yml tags the just-pushed HEAD of
-# main). Kali's sync-companion.sh pulls a BRANCH tip (git subtree pull <remote>
-# <branch>), so we pass it htpx's `main` — which, at this instant, IS the released
-# commit. companion.lock records the resulting git-subtree-split sha. (sync-companion
-# pulls the branch, not an arbitrary tag/sha; that's acceptable precisely because
-# tag == main tip here. A backfill via workflow_dispatch carries the same caveat.)
+# We vendor the EXACT released tag, not a branch tip: this job resolves the vX.Y.Z tag
+# and hands it to Kali's sync-companion.sh via `--ref "$TAG"`, so `git subtree pull`
+# fetches THAT tag's tree and companion.lock records its git-subtree-split sha. This is
+# what makes a workflow_dispatch BACKFILL of an OLDER tag correct — a bare branch pull
+# would take current main's tip regardless of which release we're fanning out (G10).
+# (Requires the --ref option in dotfiles-Kali's sync-companion.sh.)
 #
 # ── AUTH ────────────────────────────────────────────────────────────────────────
 # The built-in GITHUB_TOKEN is scoped to htpx only — it CANNOT push a branch or open
-# a PR in dotfiles-Kali. This needs a FLEET_SYNC_TOKEN secret on THIS repo: a
-# fine-grained PAT (or GitHub App installation token) with `contents:write` +
-# `pull-requests:write` on dotfiles-Kali. The preflight step fails loudly with setup
-# instructions if it's absent.
+# a PR in dotfiles-Kali. This mints a short-lived GitHub App installation token scoped
+# to dotfiles-Kali (`contents:write` + `pull-requests:write`) at run time when the fleet
+# App is configured (the FLEET_APP_ID variable), and otherwise falls back to the legacy
+# FLEET_SYNC_TOKEN PAT — see dotfiles-core's GITHUB-APP-AUTH.md. The preflight fails loudly
+# if neither is available.
 #
 # ── WHY workflow_run, NOT release: published ────────────────────────────────────
 # A Release created by the built-in GITHUB_TOKEN (as auto-tag.yml does) does NOT emit
@@ -68,7 +69,8 @@ on:
         required: true
 
 # Only the default token is requested (read access to check out htpx). All cross-repo
-# writes go through FLEET_SYNC_TOKEN, never the workflow token.
+# writes go through the minted App token (or the legacy PAT fallback), never the
+# workflow token.
 permissions:
   contents: read
 
@@ -88,6 +90,13 @@ jobs:
        github.event.workflow_run.conclusion == 'success')
     runs-on: ubuntu-latest
     timeout-minutes: 30
+    env:
+      # Presence flag for the App private key (value is 'true'/'false', never the key):
+      # secrets can't be tested in a step `if:`, but an env derived from a secret comparison
+      # can. Gates the mint on the key ACTUALLY being present, so a partial App setup (the
+      # FLEET_APP_ID variable set org-wide but the key not scoped to htpx) falls back cleanly
+      # to the PAT instead of failing the mint on an empty key.
+      HAS_APP_KEY: ${{ secrets.FLEET_APP_PRIVATE_KEY != '' }}
     steps:
       # ── RESOLVE FIRST, CHECK OUT SECOND ──────────────────────────────────────
       # Resolve (and validate) the released tag BEFORE any `actions/checkout`. A
@@ -170,40 +179,57 @@ jobs:
           fetch-depth: 0
           path: htpx
 
-      # Fail early and legibly if the cross-repo token is missing — otherwise the
-      # first clone/push would fail with an opaque 403.
-      - name: Preflight — FLEET_SYNC_TOKEN present
+      # Mint a short-lived token scoped to just dotfiles-Kali IF the fleet GitHub App is
+      # configured (the FLEET_APP_ID variable is set). No App yet → SKIPPED, and the auth
+      # below falls back to the legacy FLEET_SYNC_TOKEN PAT — so this is a no-op until you
+      # set the org var/secret (dotfiles-core GITHUB-APP-AUTH.md, G2). The App does NOT need
+      # htpx access (htpx is read with the built-in token via KEY_1 below); the minted token
+      # is scoped to the one repo this job writes to, and expires in ~1h.
+      - name: Mint a scoped installation token (if the App is configured)
+        id: app
+        if: steps.resolve.outputs.skip != 'true' && vars.FLEET_APP_ID != '' && env.HAS_APP_KEY == 'true'
+        uses: actions/create-github-app-token@fee1f7d63c2ff003460e3d139729b119787bc349 # v2.2.2
+        with:
+          app-id: ${{ vars.FLEET_APP_ID }}
+          private-key: ${{ secrets.FLEET_APP_PRIVATE_KEY }}
+          owner: ${{ github.repository_owner }}
+          repositories: dotfiles-Kali
+
+      # Fail early and legibly if NO cross-repo token is available (neither the App nor the
+      # legacy PAT) — otherwise the first clone/push would fail with an opaque 403.
+      - name: Preflight — a cross-repo write token is available
         if: steps.resolve.outputs.skip != 'true'
         env:
-          FLEET_SYNC_TOKEN: ${{ secrets.FLEET_SYNC_TOKEN }}
+          FLEET_TOKEN: ${{ steps.app.outputs.token || secrets.FLEET_SYNC_TOKEN }}
         run: |
           set -euo pipefail
-          if [ -z "${FLEET_SYNC_TOKEN:-}" ]; then
-            echo "::error::FLEET_SYNC_TOKEN secret is not set."
+          if [ -z "${FLEET_TOKEN:-}" ]; then
+            echo "::error::No cross-repo write token available."
             echo "::error::This workflow pushes a sync branch and opens a PR in dotfiles-Kali,"
-            echo "::error::which the built-in GITHUB_TOKEN cannot reach. Create a fine-grained"
-            echo "::error::PAT or GitHub App token with contents:write + pull-requests:write on"
-            echo "::error::dotfiles-Kali and save it as the FLEET_SYNC_TOKEN secret on htpx."
+            echo "::error::which the built-in GITHUB_TOKEN cannot reach. Configure the fleet"
+            echo "::error::GitHub App (FLEET_APP_ID variable + FLEET_APP_PRIVATE_KEY secret on"
+            echo "::error::htpx — see dotfiles-core GITHUB-APP-AUTH.md), or set FLEET_SYNC_TOKEN."
             exit 1
           fi
 
       - name: Sync companion into dotfiles-Kali and open a PR
         if: steps.resolve.outputs.skip != 'true'
         env:
-          GH_TOKEN: ${{ secrets.FLEET_SYNC_TOKEN }}
+          GH_TOKEN: ${{ steps.app.outputs.token || secrets.FLEET_SYNC_TOKEN }}
           OWNER: ${{ github.repository_owner }}
           TAG: ${{ steps.resolve.outputs.tag }}
           # Git auth + bot identity injected via STEP-SCOPED GIT_CONFIG_* (not `git
           # config --global`), so no token is ever written to ~/.gitconfig and the
           # scoping dies with this step — same approach as the Resolve step.
-          #   KEY_0: default github.com -> FLEET (the Kali clone, sync-branch push, PR).
+          #   KEY_0: default github.com -> the fleet token (App token, else the PAT) for
+          #     the Kali clone, sync-branch push, and PR.
           #   KEY_1: a more-specific, .git-ANCHORED rule so htpx is read with the
           #     built-in token (git uses the LONGEST match). Anchored to the full `.git`
           #     URL so it can't also rewrite a same-prefix repo like `<owner>/htpx-tools`.
-          #     => FLEET_SYNC_TOKEN never needs htpx access.
+          #     => the fleet token never needs htpx access.
           #   KEY_2/3: the bot commit identity for the gen-views regenerate commit.
           GIT_CONFIG_COUNT: "4"
-          GIT_CONFIG_KEY_0: "url.https://x-access-token:${{ secrets.FLEET_SYNC_TOKEN }}@github.com/.insteadOf"
+          GIT_CONFIG_KEY_0: "url.https://x-access-token:${{ steps.app.outputs.token || secrets.FLEET_SYNC_TOKEN }}@github.com/.insteadOf"
           GIT_CONFIG_VALUE_0: "https://github.com/"
           GIT_CONFIG_KEY_1: "url.https://x-access-token:${{ github.token }}@github.com/${{ github.repository }}.git.insteadOf"
           GIT_CONFIG_VALUE_1: "https://github.com/${{ github.repository }}.git"
@@ -230,14 +256,23 @@ jobs:
 
           # Run KALI'S OWN consumer-side sync script inside the clone. It does the
           # `git subtree pull --squash` of htpx + bumps companion.lock — and ONLY that;
-          # it never touches core.lock. Called with NO argument on purpose: the script
-          # derives BOTH the remote (https://github.com/<owner>/htpx.git) AND the branch
-          # (main) from companion.lock. Its positional arg is the REMOTE, not a branch —
-          # passing "main" there made it try to pull from a remote named "main". At
-          # release time htpx main == the released commit, so companion.lock pins the
-          # released sha (per the header's "pinned to the released ref" note).
+          # it never touches core.lock. Pass --ref "$TAG" so it vendors THIS release's
+          # EXACT tree: without it the script pulls companion_branch (main), which on a
+          # workflow_dispatch BACKFILL of an older tag would vendor current main, not the
+          # tag we're fanning out (G10). The remote is still derived from companion.lock
+          # (sync-companion's positional arg is the REMOTE, not a ref). NOTE: --ref needs
+          # the consumer-half change in dotfiles-Kali's sync-companion.sh on Kali's main.
           git config --global --add safe.directory "$kali"
-          "$kali/scripts/sync-companion.sh"
+          # Guard the cross-repo contract: this fan-out REQUIRES Kali's sync-companion.sh
+          # to support --ref (the consumer half). If a mis-ordered merge or an old Kali
+          # checkout lacks it, fail with a legible message instead of the opaque
+          # "unknown option: --ref" the script would otherwise emit. Match the actual
+          # option handler (`--ref)` / `--ref=*)`), not a mention in the header prose.
+          if ! grep -qE '^[[:space:]]*--ref[)=]' "$kali/scripts/sync-companion.sh"; then
+            echo "::error::dotfiles-Kali sync-companion.sh does not support --ref — merge the consumer-half change (its --ref option) first."
+            exit 1
+          fi
+          "$kali/scripts/sync-companion.sh" --ref "$TAG"
 
           # Generated flat views (PURPLE-TEAM.md, offensive/hacktheplanet) live in KALI,
           # outside the subtree. An htpx entry change can shift their generated blocks,
