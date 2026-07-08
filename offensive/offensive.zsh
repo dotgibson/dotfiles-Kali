@@ -252,4 +252,64 @@ rocks() {
   else echo "$url"; fi
 }
 
+# ── redup — MANUAL offensive-tool refresh (opt-in; NEVER automatic) ───────────
+# apt owns the packaged tools (`up` / `sudo apt upgrade`); THIS refreshes the fast-movers
+# that carry their OWN updater and rot between apt syncs — nuclei's engine + templates
+# (templates move daily), searchsploit's exploit-DB, and the go-installed tools that
+# aren't in apt. Run it DELIBERATELY on your attacker box — NEVER on a client/engagement
+# host mid-op, where updating a tool under a working chain is exactly how you break it.
+# Each step is guarded by tool presence (command -v, not _have — that's unfunctioned at
+# load). It only ever runs each tool's own updater; it installs nothing new and touches
+# no engagement data.
+redup() {
+  emulate -L zsh
+  if [[ "${1:-}" == -h || "${1:-}" == --help ]]; then
+    print -- "redup — manually refresh the fast-moving offensive tools (opt-in, attacker box only,"
+    print -- "        never mid-engagement): nuclei engine+templates, searchsploit exploit-DB, and"
+    print -- "        the go-installed tools. apt-packaged tools update via 'up'."
+    return 0
+  fi
+  print -P "%F{yellow}⚠ redup: manual offensive-tool refresh — attacker box only, never mid-engagement.%f"
+  local did=0
+
+  if command -v nuclei >/dev/null 2>&1; then
+    print -P "%F{cyan}» nuclei — engine + templates%f"
+    nuclei -update -silent 2>/dev/null || nuclei -update 2>/dev/null || true
+    nuclei -update-templates -silent 2>/dev/null || nuclei -ut 2>/dev/null || true
+    did=1
+  else
+    print -- "  – nuclei not installed — skipping"
+  fi
+
+  if command -v searchsploit >/dev/null 2>&1; then
+    print -P "%F{cyan}» searchsploit — exploit-DB refresh%f"
+    searchsploit -u || true
+    did=1
+  else
+    print -- "  – searchsploit not installed — skipping"
+  fi
+
+  # go-installed, apt-ABSENT fast-movers (see install/offensive-packages.txt UPSTREAM
+  # notes). Only when `go` is present; each re-fetches @latest into $GOPATH/bin. Curated to
+  # the go-ONLY tools — apt-packaged ones (gobuster/ffuf) update via `up`, so re-installing
+  # them here would only shadow the apt copy.
+  if command -v go >/dev/null 2>&1; then
+    print -P "%F{cyan}» go tools (@latest)%f"
+    local mod
+    for mod in github.com/ropnop/kerbrute@latest; do
+      print -- "  go install $mod"
+      go install "$mod" 2>/dev/null || print -- "    (failed — check the module path / network)"
+    done
+    did=1
+  else
+    print -- "  – go not installed — skipping go tools"
+  fi
+
+  if (( did )); then
+    print -P "%F{green}✓ redup: done.%f Restart any long-running tool that caches state."
+  else
+    print -- "redup: none of the fast-movers are installed — nothing to update."
+  fi
+}
+
 unfunction _have 2>/dev/null
