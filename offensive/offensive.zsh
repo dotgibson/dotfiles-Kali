@@ -252,4 +252,87 @@ rocks() {
   else echo "$url"; fi
 }
 
+# ── redup — MANUAL offensive-tool refresh (opt-in; NEVER automatic) ───────────
+# apt owns the packaged tools (`up` / `sudo apt upgrade`); THIS refreshes the fast-movers
+# that carry their OWN updater and rot between apt syncs — nuclei's engine + templates
+# (templates move daily), searchsploit's exploit-DB, and the go-installed tools that
+# aren't in apt. Run it DELIBERATELY on your attacker box — NEVER on a client/engagement
+# host mid-op, where updating a tool under a working chain is exactly how you break it.
+# Each step is guarded by tool presence (command -v, not _have — that's unfunctioned at
+# load). It only ever runs each tool's own updater; it installs nothing new and touches
+# no engagement data.
+redup() {
+  emulate -L zsh
+  if [[ "${1:-}" == -h || "${1:-}" == --help ]]; then
+    print -- "redup — manually refresh the fast-moving offensive tools (opt-in, attacker box only,"
+    print -- "        never mid-engagement): nuclei engine+templates, searchsploit exploit-DB, and"
+    print -- "        the go-installed tools. apt-packaged tools update via 'up'."
+    return 0
+  fi
+  print -P "%F{yellow}⚠ redup: manual offensive-tool refresh — attacker box only, never mid-engagement.%f"
+  local updated=0 failed=0
+
+  # nuclei — engine + templates. Count a step only when its updater EXITS 0; a failure
+  # prints a hint and is tallied, so the summary can't read green on a silent failure.
+  if command -v nuclei >/dev/null 2>&1; then
+    print -P "%F{cyan}» nuclei — engine + templates%f"
+    if nuclei -update -silent 2>/dev/null || nuclei -update 2>/dev/null; then
+      ((updated++))
+    else
+      print -P "  %F{red}✗ nuclei engine update failed%f"; ((failed++))
+    fi
+    if nuclei -update-templates -silent 2>/dev/null || nuclei -update-templates 2>/dev/null; then
+      ((updated++))
+    else
+      print -P "  %F{red}✗ nuclei template update failed%f"; ((failed++))
+    fi
+  else
+    print -- "  – nuclei not installed — skipping"
+  fi
+
+  # searchsploit — exploit-DB refresh (only counted on success).
+  if command -v searchsploit >/dev/null 2>&1; then
+    print -P "%F{cyan}» searchsploit — exploit-DB refresh%f"
+    if searchsploit -u; then
+      ((updated++))
+    else
+      print -P "  %F{red}✗ searchsploit -u failed%f"; ((failed++))
+    fi
+  else
+    print -- "  – searchsploit not installed — skipping"
+  fi
+
+  # go-installed, apt-ABSENT fast-movers (see install/offensive-packages.txt UPSTREAM
+  # notes). REINSTALL-ONLY: each tool is guarded by its OWN binary, so redup never installs
+  # something new — it only re-fetches @latest for a tool you already have. Curated to the
+  # go-ONLY tools; apt-packaged ones (gobuster/ffuf) update via `up`. `go` must be present.
+  if command -v go >/dev/null 2>&1; then
+    local pair bin mod
+    for pair in kerbrute=github.com/ropnop/kerbrute@latest; do
+      bin="${pair%%=*}"; mod="${pair#*=}"
+      if ! command -v "$bin" >/dev/null 2>&1; then
+        print -- "  – $bin not installed — skipping (redup re-fetches, it never installs new)"
+        continue
+      fi
+      print -P "%F{cyan}» go: $bin — go install $mod%f"
+      if go install "$mod" 2>/dev/null; then
+        ((updated++))
+      else
+        print -P "  %F{red}✗ go install $mod failed (module path / network?)%f"; ((failed++))
+      fi
+    done
+  else
+    print -- "  – go not installed — skipping go tools"
+  fi
+
+  print
+  if ((failed)); then
+    print -P "%F{yellow}redup: ${updated} refreshed, ${failed} failed.%f Re-run, or update the failed tool by hand."
+  elif ((updated)); then
+    print -P "%F{green}✓ redup: ${updated} tool step(s) refreshed.%f Restart any long-running tool that caches state."
+  else
+    print -- "redup: nothing to update (none of the fast-movers are installed)."
+  fi
+}
+
 unfunction _have 2>/dev/null
