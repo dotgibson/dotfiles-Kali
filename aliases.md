@@ -88,3 +88,4 @@ a few (e.g. `hethttp`) are unguarded. Engagement data lives in `$ENGAGEMENTS_DIR
 | `mkengagement <name>` | Create dated engagement workspace — creates `scope.txt` first for ROE |
 | `eng` | fzf picker to jump between existing engagements; sets `$ENGAGEMENT` |
 | `logshell` | Record terminal session via `script` to `notes/session-<timestamp>.log` |
+| `redup` | Manual, opt-in refresh of fast-moving offensive tools (nuclei engine+templates, searchsploit exploit-DB, go-installed tools) — attacker box only, never mid-engagement; apt-packaged tools update via `up` |
