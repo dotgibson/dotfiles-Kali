@@ -270,45 +270,68 @@ redup() {
     return 0
   fi
   print -P "%F{yellow}⚠ redup: manual offensive-tool refresh — attacker box only, never mid-engagement.%f"
-  local did=0
+  local updated=0 failed=0
 
+  # nuclei — engine + templates. Count a step only when its updater EXITS 0; a failure
+  # prints a hint and is tallied, so the summary can't read green on a silent failure.
   if command -v nuclei >/dev/null 2>&1; then
     print -P "%F{cyan}» nuclei — engine + templates%f"
-    nuclei -update -silent 2>/dev/null || nuclei -update 2>/dev/null || true
-    nuclei -update-templates -silent 2>/dev/null || nuclei -ut 2>/dev/null || true
-    did=1
+    if nuclei -update -silent 2>/dev/null || nuclei -update 2>/dev/null; then
+      ((updated++))
+    else
+      print -P "  %F{red}✗ nuclei engine update failed%f"; ((failed++))
+    fi
+    if nuclei -update-templates -silent 2>/dev/null || nuclei -update-templates 2>/dev/null; then
+      ((updated++))
+    else
+      print -P "  %F{red}✗ nuclei template update failed%f"; ((failed++))
+    fi
   else
     print -- "  – nuclei not installed — skipping"
   fi
 
+  # searchsploit — exploit-DB refresh (only counted on success).
   if command -v searchsploit >/dev/null 2>&1; then
     print -P "%F{cyan}» searchsploit — exploit-DB refresh%f"
-    searchsploit -u || true
-    did=1
+    if searchsploit -u; then
+      ((updated++))
+    else
+      print -P "  %F{red}✗ searchsploit -u failed%f"; ((failed++))
+    fi
   else
     print -- "  – searchsploit not installed — skipping"
   fi
 
   # go-installed, apt-ABSENT fast-movers (see install/offensive-packages.txt UPSTREAM
-  # notes). Only when `go` is present; each re-fetches @latest into $GOPATH/bin. Curated to
-  # the go-ONLY tools — apt-packaged ones (gobuster/ffuf) update via `up`, so re-installing
-  # them here would only shadow the apt copy.
+  # notes). REINSTALL-ONLY: each tool is guarded by its OWN binary, so redup never installs
+  # something new — it only re-fetches @latest for a tool you already have. Curated to the
+  # go-ONLY tools; apt-packaged ones (gobuster/ffuf) update via `up`. `go` must be present.
   if command -v go >/dev/null 2>&1; then
-    print -P "%F{cyan}» go tools (@latest)%f"
-    local mod
-    for mod in github.com/ropnop/kerbrute@latest; do
-      print -- "  go install $mod"
-      go install "$mod" 2>/dev/null || print -- "    (failed — check the module path / network)"
+    local pair bin mod
+    for pair in kerbrute=github.com/ropnop/kerbrute@latest; do
+      bin="${pair%%=*}"; mod="${pair#*=}"
+      if ! command -v "$bin" >/dev/null 2>&1; then
+        print -- "  – $bin not installed — skipping (redup re-fetches, it never installs new)"
+        continue
+      fi
+      print -P "%F{cyan}» go: $bin — go install $mod%f"
+      if go install "$mod" 2>/dev/null; then
+        ((updated++))
+      else
+        print -P "  %F{red}✗ go install $mod failed (module path / network?)%f"; ((failed++))
+      fi
     done
-    did=1
   else
     print -- "  – go not installed — skipping go tools"
   fi
 
-  if (( did )); then
-    print -P "%F{green}✓ redup: done.%f Restart any long-running tool that caches state."
+  print
+  if ((failed)); then
+    print -P "%F{yellow}redup: ${updated} refreshed, ${failed} failed.%f Re-run, or update the failed tool by hand."
+  elif ((updated)); then
+    print -P "%F{green}✓ redup: ${updated} tool step(s) refreshed.%f Restart any long-running tool that caches state."
   else
-    print -- "redup: none of the fast-movers are installed — nothing to update."
+    print -- "redup: nothing to update (none of the fast-movers are installed)."
   fi
 }
 
