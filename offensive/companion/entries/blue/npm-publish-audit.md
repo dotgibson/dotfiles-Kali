@@ -4,7 +4,7 @@ title: Detect package publish (npm audit log)
 detection: npm-audit-log
 event_ids: []
 attack:
-  tactic: TA0002
+  tactic: TA0001
   techniques: [T1195.002]
 source: npm supply-chain compromise (trojanized publish)
 pair: npm-malicious-publish

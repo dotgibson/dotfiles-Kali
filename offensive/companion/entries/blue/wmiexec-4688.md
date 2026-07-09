@@ -4,7 +4,7 @@ title: Detect WMI exec (4688 WmiPrvSE child process)
 detection: splunk-spl
 event_ids: [4688]
 attack:
-  tactic: TA0008
+  tactic: TA0002
   techniques: [T1047]
 source: TrustedSec "Actionable Purple Teaming" (BH USA 2023)
 pair: wmiexec-impacket
