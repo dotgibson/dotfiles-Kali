@@ -309,9 +309,11 @@ redup() {
   #
   # The list is EMPTY by design: kerbrute (the former sole entry) is upstream-frozen (last
   # release v1.0.3, Dec 2019), so `go install …/kerbrute@latest` every run just re-fetched
-  # an unchanging commit — a no-op that padded the "refreshed" tally. Dropped; kerbrute
-  # stays installed via install/offensive-packages.txt. Keep this machinery for the next
-  # genuinely fast-moving go-only tool: add a `bin=module@latest` pair to go_fast_movers.
+  # an unchanging commit — a no-op that padded the "refreshed" tally. Dropped; kerbrute is a
+  # manual UPSTREAM install (release binary / `go install`, never apt-packaged — see its note
+  # in install/offensive-packages.txt), so redup dropping it changes nothing about how you get
+  # or keep it. Keep this machinery for the next genuinely fast-moving go-only tool: add a
+  # `bin=module@latest` pair to go_fast_movers.
   if command -v go >/dev/null 2>&1; then
     local pair bin mod
     local -a go_fast_movers=()
