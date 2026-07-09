@@ -156,8 +156,9 @@ wire_links() {
   # The `prefix + e` engagement-session popup (os/kali.conf). It CANNOT live under
   # $CONFIG/tmux/scripts — that path is a whole-dir symlink to core/tmux/scripts (Core-
   # owned, no offensive script) — so link it a level up, beside tmux.conf, and the
-  # binding points there.
-  [[ -f "$DOTFILES/offensive/tmux/tmux-eng.sh" ]] && blib_link "$DOTFILES/offensive/tmux/tmux-eng.sh" "$CONFIG/tmux/tmux-eng.sh"
+  # binding points there. Gated on `blib_want tmux` so `--skip tmux` / `--only …` behave
+  # consistently with how Core wires its own tmux files.
+  blib_want tmux && [[ -f "$DOTFILES/offensive/tmux/tmux-eng.sh" ]] && blib_link "$DOTFILES/offensive/tmux/tmux-eng.sh" "$CONFIG/tmux/tmux-eng.sh"
   # CTF/HTB cheatsheet + companion field references — surfaced at ~/ for htp/xdev/evade/ipp.
   [[ -f "$DOTFILES/offensive/hacktheplanet" ]] && blib_link "$DOTFILES/offensive/hacktheplanet" "$HOME/hacktheplanet"
   [[ -f "$DOTFILES/offensive/exploitdev" ]] && blib_link "$DOTFILES/offensive/exploitdev" "$HOME/exploitdev"
