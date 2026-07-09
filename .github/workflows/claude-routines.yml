@@ -1,0 +1,146 @@
+name: claude-routines
+
+# Scheduled "judgment-work" bots for the offensive (red) role layer: run the
+# /tool-scout and /doc-audit maintenance routines (.claude/commands) HEADLESS on a
+# weekly cron and file their findings as a deduplicated GitHub issue — so offensive
+# tooling-freshness and offensive doc/corpus-drift review happen on their own instead
+# of waiting for a human. The mirror of dotfiles-core / dotfiles-Defense's
+# claude-routines.yml; the red side's judgment layer (companion.yml already gates the
+# MECHANICAL half — generated-block byte-drift; companion-freshness.yml watches subtree
+# staleness).
+#
+# First-party only (same principle as lint.yml): the Claude Code CLI is installed from
+# npm at a PINNED version — NO third-party marketplace action to trust. Auth is the
+# CLAUDE_CODE_OAUTH_TOKEN repo secret (a Claude subscription token minted with
+# `claude setup-token`).
+#
+# INERT BY DEFAULT: with no CLAUDE_CODE_OAUTH_TOKEN secret the jobs no-op with a warning
+# (so a fork — or this repo before you opt in — never gets a red X). Add the secret to enable.
+#
+# Report-only + engagement-safe: /tool-scout never installs, runs, or updates an
+# offensive tool (adoption + redup runs stay a manual, attacker-box, never-mid-engagement
+# decision); both routines edit nothing and file a report-first issue.
+
+on:
+  schedule:
+    # Each cron routes to exactly ONE routine via the per-job `github.event.schedule`
+    # gate below. Fri 08:00/09:00 UTC — deliberately off dotfiles-core's Tue 07:00–10:00
+    # cluster and dotfiles-Defense's Wed 08:00, so the fleet never draws on the Claude
+    # subscription at the same time. Staggered an hour apart so no two Opus runs overlap.
+    - cron: "0 8 * * 5" # Fri 08:00 UTC — tool-scout
+    - cron: "0 9 * * 5" # Fri 09:00 UTC — doc-audit
+  workflow_dispatch:
+    inputs:
+      routine:
+        description: "which routine to run"
+        type: choice
+        default: both
+        options: [both, tool-scout, doc-audit]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: claude-routines-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  # Gate: is the auth token configured? Secrets can't be read in a job-level `if`, so a
+  # tiny job exposes presence as an output the real jobs depend on. Absent → warn and skip.
+  preflight:
+    runs-on: ubuntu-latest
+    timeout-minutes: 2
+    outputs:
+      has_key: ${{ steps.k.outputs.has_key }}
+    steps:
+      - id: k
+        env:
+          CLAUDE_CODE_OAUTH_TOKEN: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
+        run: |
+          if [ -n "${CLAUDE_CODE_OAUTH_TOKEN:-}" ]; then
+            echo "has_key=true" >>"$GITHUB_OUTPUT"
+          else
+            echo "has_key=false" >>"$GITHUB_OUTPUT"
+            echo "::warning::CLAUDE_CODE_OAUTH_TOKEN secret not set — Claude routines are scaffolded but inactive. Add the secret to enable them."
+          fi
+
+  # Offensive tooling scout: reads install/offensive-packages.txt (esp. the # UPSTREAM
+  # go-install list + EOL/rename annotations) and offensive.zsh's HAVE_* set + redup's
+  # updater list, delegates web research to the tool-scout subagent, and files a
+  # report-first issue on new/renamed/EOL tools + redup candidates + stale annotations.
+  # NEVER installs or runs a tool.
+  tool-scout:
+    needs: preflight
+    if: >-
+      needs.preflight.outputs.has_key == 'true' &&
+      (github.event.schedule == '0 8 * * 5' ||
+       github.event.inputs.routine == 'both' ||
+       github.event.inputs.routine == 'tool-scout')
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    permissions:
+      contents: read
+      issues: write
+    env:
+      CLAUDE_CODE_OAUTH_TOKEN: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
+      ISSUE_TITLE: "tool-scout: weekly offensive tooling scan"
+    steps:
+      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+      - name: Load the pinned Claude Code version
+        # Read the canonical pin from the vendored core/ subtree — no hardcoded duplicate to drift.
+        run: grep '^CLAUDE_CODE_VERSION=' core/scripts/tool-versions.env >>"$GITHUB_ENV"
+      - name: Install Claude Code CLI (pinned)
+        # Fail fast if the pin didn't load — never silently fall back to a floating `latest`.
+        run: npm install -g "@anthropic-ai/claude-code@${CLAUDE_CODE_VERSION:?not loaded from core/scripts/tool-versions.env}"
+      - name: Run /tool-scout
+        run: |
+          claude -p "/tool-scout" \
+            --model opus \
+            --permission-mode acceptEdits \
+            --allowedTools "Task,Read,Grep,Glob,WebSearch,WebFetch" \
+            --output-format text | tee "$RUNNER_TEMP/tool-scout.md"
+      - name: File the report as an issue
+        # GH_TOKEN scoped to just this step (least privilege): only the final `gh` call
+        # needs it, so it isn't exposed to the `claude` routine run above.
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: bash .github/workflows/file-routine-issue.sh "$ISSUE_TITLE" "$RUNNER_TEMP/tool-scout.md"
+
+  # Offensive docs auditor: cross-checks the corpus projection into hacktheplanet /
+  # PURPLE-TEAM.md, hand-authored commands vs the corpus, tools in the docs vs
+  # install/offensive-packages.txt, and CLAUDE.md's tree — files a report-first issue.
+  # Inline (no subagent, no web); corpus fixes route upstream to htpx.
+  doc-audit:
+    needs: preflight
+    if: >-
+      needs.preflight.outputs.has_key == 'true' &&
+      (github.event.schedule == '0 9 * * 5' ||
+       github.event.inputs.routine == 'both' ||
+       github.event.inputs.routine == 'doc-audit')
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    permissions:
+      contents: read
+      issues: write
+    env:
+      CLAUDE_CODE_OAUTH_TOKEN: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
+      ISSUE_TITLE: "doc-audit: weekly offensive docs review"
+    steps:
+      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+      - name: Load the pinned Claude Code version
+        # Read the canonical pin from the vendored core/ subtree — no hardcoded duplicate to drift.
+        run: grep '^CLAUDE_CODE_VERSION=' core/scripts/tool-versions.env >>"$GITHUB_ENV"
+      - name: Install Claude Code CLI (pinned)
+        # Fail fast if the pin didn't load — never silently fall back to a floating `latest`.
+        run: npm install -g "@anthropic-ai/claude-code@${CLAUDE_CODE_VERSION:?not loaded from core/scripts/tool-versions.env}"
+      - name: Run /doc-audit
+        run: |
+          claude -p "/doc-audit" \
+            --model opus \
+            --permission-mode acceptEdits \
+            --allowedTools "Read,Grep,Glob,Bash(git ls-files:*),Bash(ls:*)" \
+            --output-format text | tee "$RUNNER_TEMP/doc-audit.md"
+      - name: File the report as an issue
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: bash .github/workflows/file-routine-issue.sh "$ISSUE_TITLE" "$RUNNER_TEMP/doc-audit.md"
