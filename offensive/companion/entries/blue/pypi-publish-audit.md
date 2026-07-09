@@ -4,7 +4,7 @@ title: Detect token release upload (PyPI journal)
 detection: pypi-audit-log
 event_ids: []
 attack:
-  tactic: TA0002
+  tactic: TA0001
   techniques: [T1195.002]
 source: PyPI supply-chain compromise (trojanized release)
 pair: pypi-malicious-publish

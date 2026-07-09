@@ -140,15 +140,27 @@ jobs:
             # The vX.Y.Z tag pointing at the commit auto-tag.yml just tagged. Clone
             # htpx at that head_sha (full history + tags) and read the tag locally. A
             # read loop (not `| head`) avoids the pipefail/SIGPIPE race under pipefail.
-            git clone --no-checkout "https://github.com/${OWNER}/${REPO}.git" _resolve
-            git -C _resolve fetch --tags origin
+            #
+            # gc.auto=0 / maintenance.auto=false / fetch.writeCommitGraph=false: a plain
+            # clone+fetch can spawn a background `commit-graph write` that keeps writing
+            # into .git/objects/info/commit-graphs AFTER the command returns, racing the
+            # `rm -rf` below — which then fails with "Directory not empty" and, under
+            # `set -e`, turns a should-be-skip run into a spurious red X. Disabling the
+            # background maintenance stops the race at its source.
+            git -c gc.auto=0 -c maintenance.auto=false -c fetch.writeCommitGraph=false \
+              clone --no-checkout "https://github.com/${OWNER}/${REPO}.git" _resolve
+            git -c gc.auto=0 -c maintenance.auto=false -c fetch.writeCommitGraph=false \
+              -C _resolve fetch --tags origin
             tag=""
             while IFS= read -r t; do
               case "$t" in
                 v[0-9]*.[0-9]*.[0-9]*) tag="$t"; break ;;
               esac
             done < <(git -C _resolve tag --points-at "$HEAD_SHA")
-            rm -rf _resolve
+            # Cleanup is best-effort — never fail the step on the temp clone's removal
+            # (it's disposable on an ephemeral runner, and belt-and-suspenders against
+            # any lingering git background process that the settings above didn't catch).
+            rm -rf _resolve || true
           fi
           ver="${tag#v}"
           if ! printf '%s' "$ver" | grep -qE '^[0-9]+\.[0-9]+\.[0-9]+$'; then
@@ -173,7 +185,7 @@ jobs:
       # reaches checkout. Full history so git subtree downstream has what it needs.
       - name: Check out htpx at the released tag
         if: steps.resolve.outputs.skip != 'true'
-        uses: actions/checkout@v4
+        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7
         with:
           ref: ${{ steps.resolve.outputs.tag }}
           fetch-depth: 0
@@ -188,7 +200,7 @@ jobs:
       - name: Mint a scoped installation token (if the App is configured)
         id: app
         if: steps.resolve.outputs.skip != 'true' && vars.FLEET_APP_ID != '' && env.HAS_APP_KEY == 'true'
-        uses: actions/create-github-app-token@fee1f7d63c2ff003460e3d139729b119787bc349 # v2.2.2
+        uses: actions/create-github-app-token@bcd2ba49218906704ab6c1aa796996da409d3eb1 # v3.2.0
         with:
           app-id: ${{ vars.FLEET_APP_ID }}
           private-key: ${{ secrets.FLEET_APP_PRIVATE_KEY }}
