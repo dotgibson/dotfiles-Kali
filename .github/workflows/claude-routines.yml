@@ -44,10 +44,6 @@ concurrency:
   group: claude-routines-${{ github.ref }}
   cancel-in-progress: true
 
-env:
-  # Keep in step with dotfiles-core's scripts/tool-versions.env CLAUDE_CODE_VERSION.
-  CLAUDE_CODE_VERSION: "2.1.185"
-
 jobs:
   # Gate: is the auth token configured? Secrets can't be read in a job-level `if`, so a
   # tiny job exposes presence as an output the real jobs depend on. Absent → warn and skip.
@@ -90,9 +86,12 @@ jobs:
       ISSUE_TITLE: "tool-scout: weekly offensive tooling scan"
     steps:
       - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+      - name: Load the pinned Claude Code version
+        # Read the canonical pin from the vendored core/ subtree — no hardcoded duplicate to drift.
+        run: grep '^CLAUDE_CODE_VERSION=' core/scripts/tool-versions.env >>"$GITHUB_ENV"
       - name: Install Claude Code CLI (pinned)
-        # Fail fast if the pin is empty — never silently fall back to a floating `latest`.
-        run: npm install -g "@anthropic-ai/claude-code@${CLAUDE_CODE_VERSION:?not set}"
+        # Fail fast if the pin didn't load — never silently fall back to a floating `latest`.
+        run: npm install -g "@anthropic-ai/claude-code@${CLAUDE_CODE_VERSION:?not loaded from core/scripts/tool-versions.env}"
       - name: Run /tool-scout
         run: |
           claude -p "/tool-scout" \
@@ -128,8 +127,12 @@ jobs:
       ISSUE_TITLE: "doc-audit: weekly offensive docs review"
     steps:
       - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+      - name: Load the pinned Claude Code version
+        # Read the canonical pin from the vendored core/ subtree — no hardcoded duplicate to drift.
+        run: grep '^CLAUDE_CODE_VERSION=' core/scripts/tool-versions.env >>"$GITHUB_ENV"
       - name: Install Claude Code CLI (pinned)
-        run: npm install -g "@anthropic-ai/claude-code@${CLAUDE_CODE_VERSION:?not set}"
+        # Fail fast if the pin didn't load — never silently fall back to a floating `latest`.
+        run: npm install -g "@anthropic-ai/claude-code@${CLAUDE_CODE_VERSION:?not loaded from core/scripts/tool-versions.env}"
       - name: Run /doc-audit
         run: |
           claude -p "/doc-audit" \
