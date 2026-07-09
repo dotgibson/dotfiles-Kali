@@ -96,7 +96,7 @@ jobs:
         run: |
           claude -p "/tool-scout" \
             --model opus \
-            --permission-mode acceptEdits \
+            --permission-mode default \
             --allowedTools "Task,Read,Grep,Glob,WebSearch,WebFetch" \
             --output-format text | tee "$RUNNER_TEMP/tool-scout.md"
       - name: File the report as an issue
@@ -137,7 +137,7 @@ jobs:
         run: |
           claude -p "/doc-audit" \
             --model opus \
-            --permission-mode acceptEdits \
+            --permission-mode default \
             --allowedTools "Read,Grep,Glob,Bash(git ls-files:*),Bash(ls:*)" \
             --output-format text | tee "$RUNNER_TEMP/doc-audit.md"
       - name: File the report as an issue
