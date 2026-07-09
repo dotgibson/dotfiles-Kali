@@ -20,6 +20,12 @@ GitHub Release; `sync-fanout.yml` then opens the Kali sync PR.
 
 ## [Unreleased]
 
+## [v2.1.0] - 2026-07-08
+
+### Added
+
+- `renovate.json` - configuration for Renovate app.
+
 ## [v2.0.0] - 2026-07-06
 
 ### Changed
