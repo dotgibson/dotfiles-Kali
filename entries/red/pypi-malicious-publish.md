@@ -2,9 +2,9 @@
 id: pypi-malicious-publish
 title: PyPI malicious release upload (supply-chain implant)
 section: PyPI / registry
-phase: Execution
+phase: Initial Access
 attack:
-  tactic: TA0002
+  tactic: TA0001
   techniques: [T1195.002]
 platform: [pypi]
 source: PyPI supply-chain compromise (trojanized release)

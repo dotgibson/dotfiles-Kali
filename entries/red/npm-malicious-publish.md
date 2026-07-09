@@ -2,9 +2,9 @@
 id: npm-malicious-publish
 title: npm malicious package publish (supply-chain implant)
 section: npm / registry
-phase: Execution
+phase: Initial Access
 attack:
-  tactic: TA0002
+  tactic: TA0001
   techniques: [T1195.002]
 platform: [npm]
 source: npm supply-chain compromise (trojanized publish)

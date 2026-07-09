@@ -2,9 +2,9 @@
 id: wmiexec-impacket
 title: WMI remote exec (impacket-wmiexec, no service dropped)
 section: Lateral movement & remote execution
-phase: Lateral Movement
+phase: Execution
 attack:
-  tactic: TA0008
+  tactic: TA0002
   techniques: [T1047]
 platform: [windows, network]
 source: hacktheplanet §"Lateral movement & remote execution"
