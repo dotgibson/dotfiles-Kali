@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # tmux-eng.sh — fuzzy-find an engagement and create/switch to its tmux session.
-# The offensive-layer twin of Core's tmux-sessionizer.sh.
+# The offensive-layer twin of Core's tmux-sesh.sh.
 # Bound to: prefix + e   (in dotfiles-Kali os/kali.conf — the `offensive` bits)
 #
 # Switch-only by design: NEW engagements are created with `mkengagement` in a
