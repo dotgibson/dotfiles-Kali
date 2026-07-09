@@ -16,14 +16,20 @@
 netexec              # nxc — successor to CrackMapExec (CME archived 2023)
 nmap
 responder
+coercer              # NTLM coercion trigger (PetitPotam/PrinterBug/DFSCoerce/ShadowCoerce) — the piece that KICKS the relay/ESC8 chain (responder/ntlmrelayx have no trigger of their own)
 impacket-scripts     # ~60 scripts: secretsdump, psexec, ntlmrelayx, GetUserSPNs…
 evil-winrm
 certipy-ad           # AD CS abuse (ESC1–ESC16)
 python3-ldapdomaindump  # apt name is python3-ldapdomaindump (bare 'ldapdomaindump' isn't packaged)
 enum4linux-ng
 smbmap
+bloodyad             # raw-LDAP shadow-creds / DACL / RBCD / attribute writes (+ autobloody to auto-exploit a BloodHound-graphed path)
 # kerbrute          → UPSTREAM: not in apt — grab the release binary or `go install`
-#                     github.com/ropnop/kerbrute (see ~/hacktheplanet)
+#                     github.com/ropnop/kerbrute (see ~/hacktheplanet).
+#                     NOTE: upstream FROZEN (last release v1.0.3, Dec 2019). Keep it for the
+#                     stealthy pre-auth spray that aborts before the password stage, but nxc
+#                     covers userenum/asreproast. NOT a fast-mover — dropped from redup's
+#                     go-loop (re-fetching an unchanging @latest was a no-op).
 
 # ── BloodHound CE + collectors ────────────────────────────────────────────────
 # BloodHound CE itself is the Postgres-backed web app — run it via the official
@@ -44,7 +50,7 @@ nuclei               # ProjectDiscovery — templated scanner (AI templates in 2
 httpx-toolkit        # ProjectDiscovery httpx — bare 'httpx' apt pkg is the python lib, not this
 # katana            → UPSTREAM (Go): not in apt —
 #                     go install github.com/projectdiscovery/katana/cmd/katana@latest
-wfuzz
+# (wfuzz dropped — unreferenced by any doc; ffuf/feroxbuster/gobuster cover fuzzing)
 
 # ── Recon / OSINT ─────────────────────────────────────────────────────────────
 amass
@@ -53,6 +59,9 @@ dnsx
 bbot                 # recon engine (pipx/upstream if the repo build lags)
 theharvester
 masscan
+# TeamFiltration    → UPSTREAM: not in apt (dotnet) — github.com/Flangvik/TeamFiltration
+#                     (M365/Entra enum + password spray + exfil; the tool behind
+#                     hacktheplanet's M365 flow)
 
 # ── C2 / adversary emulation ──────────────────────────────────────────────────
 metasploit-framework

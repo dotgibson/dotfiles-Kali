@@ -306,9 +306,18 @@ redup() {
   # notes). REINSTALL-ONLY: each tool is guarded by its OWN binary, so redup never installs
   # something new — it only re-fetches @latest for a tool you already have. Curated to the
   # go-ONLY tools; apt-packaged ones (gobuster/ffuf) update via `up`. `go` must be present.
+  #
+  # The list is EMPTY by design: kerbrute (the former sole entry) is upstream-frozen (last
+  # release v1.0.3, Dec 2019), so `go install …/kerbrute@latest` every run just re-fetched
+  # an unchanging commit — a no-op that padded the "refreshed" tally. Dropped; kerbrute is a
+  # manual UPSTREAM install (release binary / `go install`, never apt-packaged — see its note
+  # in install/offensive-packages.txt), so redup dropping it changes nothing about how you get
+  # or keep it. Keep this machinery for the next genuinely fast-moving go-only tool: add a
+  # `bin=module@latest` pair to go_fast_movers.
   if command -v go >/dev/null 2>&1; then
     local pair bin mod
-    for pair in kerbrute=github.com/ropnop/kerbrute@latest; do
+    local -a go_fast_movers=()
+    for pair in "${go_fast_movers[@]}"; do
       bin="${pair%%=*}"; mod="${pair#*=}"
       if ! command -v "$bin" >/dev/null 2>&1; then
         print -- "  – $bin not installed — skipping (redup re-fetches, it never installs new)"
