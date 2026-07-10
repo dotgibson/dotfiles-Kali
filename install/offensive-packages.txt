@@ -38,6 +38,11 @@ bloodyad             # raw-LDAP shadow-creds / DACL / RBCD / attribute writes (+
 bloodhound-ce-python # CE-compatible collector. NOTE: the 'bloodhound.py' apt pkg
 #                    # is the LEGACY (≤4.3.1) collector — its zips don't ingest into CE
 #                    # nxc's --bloodhound module also collects (see offensive.zsh `bhce`)
+# rusthound-ce      → UPSTREAM (cargo install rusthound-ce): a single static Rust
+#                     binary that emits CE-ingestible JSON — the fast ALTERNATE to
+#                     bloodhound-ce-python on large domains (no Python chain to drop on
+#                     a host). Not in Kali apt; not a redup fast-mover (collectors aren't
+#                     daily-churn). Complement, not replacement.
 # SharpHound (the C# collector) is dropped on the target, not installed here.
 
 # ── Web app / API ─────────────────────────────────────────────────────────────
