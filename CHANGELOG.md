@@ -20,6 +20,23 @@ GitHub Release; `sync-fanout.yml` then opens the Kali sync PR.
 
 ## [Unreleased]
 
+## [v2.3.0] - 2026-07-10
+
+### Added
+
+- **Command & Control + Impact corpus (14 new red↔blue pairs, +28 entries).** Fills
+  the two tactics that had **zero** coverage. **`TA0011` Command & Control** (8 pairs):
+  HTTPS beacon sleep+jitter, DNS tunneling, domain fronting, mutual-TLS/JA3, ICMP
+  tunneling, web-service C2 (Telegram/Slack/Gist), DGA rendezvous, and reverse
+  tunnels (chisel/ligolo) — each attack paired with the network/host detection that
+  survives its evasion (inter-arrival regularity, Sysmon-22 query shape, SNI/Host
+  mismatch, JA3 fingerprints, NXDOMAIN entropy). **`TA0040` Impact** (6 pairs):
+  recovery inhibition (`vssadmin`/`wbadmin`/`bcdedit`), mass file encryption, pre-
+  encryption service kills, cloud data destruction (CloudTrail delete burst),
+  cryptojacking (Stratum), and account access removal (4724/4725/4726). Corpus-only
+  (no flat-view markers); every new entry carries a valid, non-deprecated ATT&CK
+  technique ID.
+
 ## [v2.2.0] - 2026-07-09
 
 ### Added
