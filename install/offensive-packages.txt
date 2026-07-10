@@ -15,11 +15,12 @@
 # ── Network / Active Directory ────────────────────────────────────────────────
 netexec              # nxc — successor to CrackMapExec (CME archived 2023)
 nmap
+rustscan             # fast port sweep that hands off to nmap -sC -sV; ships in kali-linux-default, list it for slim installs
 responder
 coercer              # NTLM coercion trigger (PetitPotam/PrinterBug/DFSCoerce/ShadowCoerce) — the piece that KICKS the relay/ESC8 chain (responder/ntlmrelayx have no trigger of their own)
 impacket-scripts     # ~60 scripts: secretsdump, psexec, ntlmrelayx, GetUserSPNs…
 evil-winrm
-certipy-ad           # AD CS abuse (ESC1–ESC16)
+certipy-ad           # AD CS abuse (ESC1–ESC17, since Certipy v5.1.0)
 python3-ldapdomaindump  # apt name is python3-ldapdomaindump (bare 'ldapdomaindump' isn't packaged)
 enum4linux-ng
 smbmap
@@ -37,6 +38,11 @@ bloodyad             # raw-LDAP shadow-creds / DACL / RBCD / attribute writes (+
 bloodhound-ce-python # CE-compatible collector. NOTE: the 'bloodhound.py' apt pkg
 #                    # is the LEGACY (≤4.3.1) collector — its zips don't ingest into CE
 #                    # nxc's --bloodhound module also collects (see offensive.zsh `bhce`)
+# rusthound-ce      → UPSTREAM (cargo install rusthound-ce): a single static Rust
+#                     binary that emits CE-ingestible JSON — the fast ALTERNATE to
+#                     bloodhound-ce-python on large domains (no Python chain to drop on
+#                     a host). Not in Kali apt; not a redup fast-mover (collectors aren't
+#                     daily-churn). Complement, not replacement.
 # SharpHound (the C# collector) is dropped on the target, not installed here.
 
 # ── Web app / API ─────────────────────────────────────────────────────────────
@@ -45,6 +51,7 @@ ffuf
 feroxbuster
 gobuster
 nikto
+wpscan               # WordPress enum/scan (needs a free API token for vuln data); ships in kali-linux-default
 sqlmap
 nuclei               # ProjectDiscovery — templated scanner (AI templates in 2026)
 httpx-toolkit        # ProjectDiscovery httpx — bare 'httpx' apt pkg is the python lib, not this
@@ -59,6 +66,7 @@ dnsx
 bbot                 # recon engine (pipx/upstream if the repo build lags)
 theharvester
 masscan
+exploitdb            # searchsploit — offline Exploit-DB CLI; redup -u keeps it current. Ships in kali-linux-default; list it so a slim box (and redup) has it
 # TeamFiltration    → UPSTREAM: not in apt (dotnet) — github.com/Flangvik/TeamFiltration
 #                     (M365/Entra enum + password spray + exfil; the tool behind
 #                     hacktheplanet's M365 flow)
