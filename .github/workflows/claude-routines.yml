@@ -153,10 +153,12 @@ jobs:
   # no web); SKIPS the # companion:gen marker regions (machine-generated from htpx).
   methodology-review:
     needs: preflight
+    # `both` keeps its original meaning — tool-scout + doc-audit, the pair that runs
+    # together — matching dotfiles-core's dispatch semantics; methodology-review is
+    # selected on its own cron or explicitly by name (so `both` never means "all three").
     if: >-
       needs.preflight.outputs.has_key == 'true' &&
       (github.event.schedule == '0 10 * * 5' ||
-       github.event.inputs.routine == 'both' ||
        github.event.inputs.routine == 'methodology-review')
     runs-on: ubuntu-latest
     timeout-minutes: 20
