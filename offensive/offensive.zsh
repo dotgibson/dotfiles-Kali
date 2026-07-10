@@ -59,8 +59,27 @@ export ENGAGEMENTS_DIR SECLISTS_DIR WORDLISTS_DIR
 [[ -n ${HAVE_NXC:-}    ]] && alias smb='nxc smb' && alias ldap='nxc ldap' && alias winrm='nxc winrm'
 [[ -n ${HAVE_MSF:-}    ]] && alias msf='msfconsole -q'
 [[ -n ${HAVE_SLIVER:-} ]] && alias sliver='sliver-client'
-# Quick stand-up of a delivery web server in the CURRENT dir (note the port).
-alias hethttp='echo "serving $(pwd) on :8000"; python3 -m http.server 8000'
+# Quick stand-up of a delivery web server in the CURRENT dir. Binds ALL interfaces
+# (0.0.0.0) on purpose — a target has to reach it over your VPN/tun — so it advertises the
+# REACHABLE callback URL (via lhost) instead of a bare `:8000` you'd have to resolve by hand.
+# Optional port arg (default 8000).
+hethttp() {
+  local port="${1:-8000}" addr
+  # Validate the port before advertising a URL (mirrors Core's `serve`): a bad value
+  # should fail in the tool's voice on stderr, not print "serving …" then let
+  # http.server crash. `<->` is zsh's non-negative-integer glob.
+  if [[ "$port" != <-> ]] || ((port < 1 || port > 65535)); then
+    echo "usage: hethttp [port]   (port must be 1-65535; default 8000)" >&2
+    return 1
+  fi
+  addr=$(lhost 2>/dev/null)
+  if [[ -n "$addr" ]]; then
+    echo "serving $(pwd) on http://${addr}:${port}/  (bound 0.0.0.0 — reachable on every interface)"
+  else
+    echo "serving $(pwd) on 0.0.0.0:${port}  (no tun/LAN IP found; reachable on every interface)"
+  fi
+  python3 -m http.server "$port"
+}
 # SecLists fast-path: jump to the wordlist tree with your fzf preview stack.
 [[ -d "$SECLISTS_DIR" ]] && alias seclists='cd "$SECLISTS_DIR"'
 # Open the CTF/HTB command cheatsheet (folds by service — `za` toggles a fold).
@@ -81,8 +100,8 @@ alias hethttp='echo "serving $(pwd) on :8000"; python3 -m http.server 8000'
 # Usage: nmapsweep <target/CIDR>   → ./nmap/<target>.{nmap,gnmap,xml}
 # Intentionally conservative defaults; tune per engagement & ROE.
 nmapsweep() {
-  [[ -z "$1" ]] && { echo "Usage: nmapsweep <target|CIDR>"; return 1; }
-  [[ -n ${HAVE_NMAP:-} ]] || { echo "nmap not installed"; return 1; }
+  [[ -z "$1" ]] && { echo "Usage: nmapsweep <target|CIDR>" >&2; return 1; }
+  [[ -n ${HAVE_NMAP:-} ]] || { echo "nmap not installed" >&2; return 1; }
   local out="nmap"; mkdir -p "$out"
   local stamp; stamp=$(echo "$1" | tr '/:' '__')
   nmap -sCV -T4 -oA "$out/$stamp" "$1"
@@ -93,10 +112,10 @@ nmapsweep() {
 # current engagement's loot/ dir so it's ready to drag into BloodHound CE.
 # Usage: bhce <dc-ip> <user> <pass-or-hash> [domain]
 bhce() {
-  [[ -n ${HAVE_NXC:-} ]] || { echo "NetExec (nxc) not installed"; return 1; }
+  [[ -n ${HAVE_NXC:-} ]] || { echo "NetExec (nxc) not installed" >&2; return 1; }
   if [[ $# -lt 3 ]]; then
-    echo "Usage: bhce <dc-ip> <user> <pass|:NThash> [domain]"
-    echo "  collects All methods via LDAP and zips for BloodHound CE ingest"
+    echo "Usage: bhce <dc-ip> <user> <pass|:NThash> [domain]" >&2
+    echo "  collects All methods via LDAP and zips for BloodHound CE ingest" >&2
     return 1
   fi
   local dc="$1" user="$2" secret="$3" dom="${4:-}"
@@ -116,7 +135,7 @@ bhce() {
 # Layout follows a recon→loot→report flow; scope.txt is created FIRST and opened
 # so the rules of engagement are written down before any tool runs.
 mkengagement() {
-  [[ -z "$1" ]] && { echo "Usage: mkengagement <client-or-codename>"; return 1; }
+  [[ -z "$1" ]] && { echo "Usage: mkengagement <client-or-codename>" >&2; return 1; }
   local name slug root
   slug=$(echo "$1" | tr '[:upper:] ' '[:lower:]_' | tr -cd '[:alnum:]_-')
   name="$(date +%Y%m%d)-${slug}"
@@ -149,7 +168,7 @@ EOF
 
 # eng — fzf-jump between existing engagements (mirrors Core's fzf widget style)
 eng() {
-  [[ -d "$ENGAGEMENTS_DIR" ]] || { echo "no $ENGAGEMENTS_DIR yet — run mkengagement"; return 1; }
+  [[ -d "$ENGAGEMENTS_DIR" ]] || { echo "no $ENGAGEMENTS_DIR yet — run mkengagement" >&2; return 1; }
   local sel
   sel=$(find "$ENGAGEMENTS_DIR" -mindepth 1 -maxdepth 1 -type d 2>/dev/null \
         | sort -r \
@@ -175,7 +194,7 @@ logshell() {
 # cde — cd back to the active engagement tree ($ENGAGEMENT, set by mkengagement/eng).
 cde() {
   [[ -n "${ENGAGEMENT:-}" && -d "$ENGAGEMENT" ]] || {
-    echo "no active engagement — run mkengagement/eng first"; return 1; }
+    echo "no active engagement — run mkengagement/eng first" >&2; return 1; }
   cd "$ENGAGEMENT"
 }
 
@@ -207,7 +226,7 @@ lhost() {
   else
     ip=$(ip -4 -brief addr show "$iface" 2>/dev/null | awk '{print $3}' | cut -d/ -f1)
   fi
-  [[ -z "$ip" ]] && { echo "no IPv4 found (try: lhost <iface>)"; return 1; }
+  [[ -z "$ip" ]] && { echo "no IPv4 found (try: lhost <iface>)" >&2; return 1; }
   echo "$ip"
 }
 
@@ -234,7 +253,7 @@ EOF
 # tool: "I don't know how to attack X" is a search, not a wall.
 # Usage: rocks forward shell    |    rocks kerberoast
 rocks() {
-  [[ $# -eq 0 ]] && { echo "Usage: rocks <keyword…>   (searches ippsec.rocks)"; return 1; }
+  [[ $# -eq 0 ]] && { echo "Usage: rocks <keyword…>   (searches ippsec.rocks)" >&2; return 1; }
   # Percent-encode the WHOLE query — the term lands in the URL fragment, so a bare
   # '#', '?', '&' or '%' would otherwise break it. Only unreserved chars pass through.
   local s="$*" q="" c i
