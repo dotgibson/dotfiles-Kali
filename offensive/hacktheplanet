@@ -14,6 +14,14 @@ entries/red/), which is canonical for them — edit the entry and run
 offensive/companion/gen-views.sh, not the lines here (CI rejects a hand-edit).
 Everything outside the markers is hand-authored as usual.
 
+Not every red corpus entry is projected here, and that asymmetry is DELIBERATE:
+the companion is the red<->blue PAIRING anchor (its blue twin projects cleanly into
+PURPLE-TEAM.md because a detection carries no extra field context), but several red
+attacks live here as hand-authored prose instead — a fuller field reference than the
+bare corpus command, with the sharper token (`<dc-ip>` not the projected `<ip_address>`),
+inline pedagogy, and follow-up steps the entry omits. So a red entry WITHOUT a
+`# companion:gen` block here is projecting-by-omission on purpose, not missing.
+
 SCOPE: authorized engagements (written ROE + scope) or your own CTF/HTB labs ONLY.
 Engagement DATA lives in ~/engagements (`mkengagement`), never in this repo.
 
