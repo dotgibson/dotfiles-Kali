@@ -81,11 +81,19 @@ _dotfiles_go_install() { # <import-path@version> <binary-name>
   # go install drops binaries in ~/go/bin, which the shell layer does NOT put on
   # PATH (it prefixes ~/.local/bin and ~/.cargo/bin) — so pin GOBIN to ~/.local/bin
   # or the tool would still read as "missing" after bootstrap.
+  [ "$#" -ge 2 ] || return 0
   if command -v "$2" >/dev/null 2>&1; then return 0; fi
-  local gobin="$HOME/.local/bin"; mkdir -p "$gobin"
-  if command -v go >/dev/null 2>&1; then GOBIN="$gobin" go install "$1" >/dev/null 2>&1 || true
-  elif command -v mise >/dev/null 2>&1; then GOBIN="$gobin" mise exec go@latest -- go install "$1" >/dev/null 2>&1 || true
-  else echo "   $2: needs Go — install later with: GOBIN=$gobin go install $1"; fi
+  local gobin="$HOME/.local/bin"
+  mkdir -p "$gobin" 2>/dev/null || true
+  if command -v go >/dev/null 2>&1; then
+    GOBIN="$gobin" go install "$1" >/dev/null 2>&1 ||
+      echo "   $2: go install failed — retry later: GOBIN=$gobin go install $1"
+  elif command -v mise >/dev/null 2>&1; then
+    GOBIN="$gobin" mise exec go@latest -- go install "$1" >/dev/null 2>&1 ||
+      echo "   $2: go install failed — retry later: GOBIN=$gobin go install $1"
+  else
+    echo "   $2: needs Go — install later with: GOBIN=$gobin go install $1"
+  fi
   return 0
 }
 
@@ -158,13 +166,15 @@ provision() {
   # guarded on `command -v op` and each step is best-effort so it can't abort bootstrap.
   if ! command -v op >/dev/null 2>&1; then
     blib_say "op (1Password CLI — official signed apt repo)"
-    {
-      sudo mkdir -p /etc/debsig/policies/AC2D62742012EA22 /usr/share/keyrings /usr/share/debsig/keyrings/AC2D62742012EA22 &&
-      curl -fsSL https://downloads.1password.com/linux/keys/1password.asc | sudo gpg --dearmor -o /usr/share/keyrings/1password-archive-keyring.gpg &&
-      echo "deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/1password-archive-keyring.gpg] https://downloads.1password.com/linux/debian/$(dpkg --print-architecture) stable main" | sudo tee /etc/apt/sources.list.d/1password.list >/dev/null &&
-      sudo apt-get update &&
-      sudo apt-get install -y 1password-cli
-    } || echo "   op: 1Password CLI install skipped — set up later per https://developer.1password.com/docs/cli/get-started/"
+    sudo mkdir -p /usr/share/keyrings
+    curl -fsSL https://downloads.1password.com/linux/keys/1password.asc | sudo gpg --dearmor -o /usr/share/keyrings/1password-archive-keyring.gpg
+    echo "deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/1password-archive-keyring.gpg] https://downloads.1password.com/linux/debian/$(dpkg --print-architecture) stable main" | sudo tee /etc/apt/sources.list.d/1password.list >/dev/null
+    # The repo file is written before `apt-get update`; if update OR install fails,
+    # a stale entry would wedge every future `apt-get update`. Roll it back on failure.
+    if ! (sudo apt-get update && sudo apt-get install -y 1password-cli); then
+      sudo rm -f /etc/apt/sources.list.d/1password.list /usr/share/keyrings/1password-archive-keyring.gpg
+      echo "   op install failed — repo entry rolled back; see developer.1password.com/docs/cli/get-started"
+    fi
   fi
 
   if ((IS_WSL)); then
