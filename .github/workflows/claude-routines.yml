@@ -29,13 +29,14 @@ on:
     # subscription at the same time. Staggered an hour apart so no two Opus runs overlap.
     - cron: "0 8 * * 5" # Fri 08:00 UTC — tool-scout
     - cron: "0 9 * * 5" # Fri 09:00 UTC — doc-audit
+    - cron: "0 10 * * 5" # Fri 10:00 UTC — methodology-review
   workflow_dispatch:
     inputs:
       routine:
         description: "which routine to run"
         type: choice
         default: both
-        options: [both, tool-scout, doc-audit]
+        options: [both, tool-scout, doc-audit, methodology-review]
 
 permissions:
   contents: read
@@ -144,3 +145,45 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
         run: bash .github/workflows/file-routine-issue.sh "$ISSUE_TITLE" "$RUNNER_TEMP/doc-audit.md"
+
+  # Offensive methodology auditor: cross-checks the hand-curated method docs
+  # (hacktheplanet, OFFENSIVE-METHODOLOGY.md, exploitdev, evasion, ippsec) for
+  # deprecated flags / renamed/EOL binaries against install/offensive-packages.txt's
+  # canonical names + annotations — files a report-first issue. Inline (no subagent,
+  # no web); SKIPS the # companion:gen marker regions (machine-generated from htpx).
+  methodology-review:
+    needs: preflight
+    # `both` keeps its original meaning — tool-scout + doc-audit, the pair that runs
+    # together — matching dotfiles-core's dispatch semantics; methodology-review is
+    # selected on its own cron or explicitly by name (so `both` never means "all three").
+    if: >-
+      needs.preflight.outputs.has_key == 'true' &&
+      (github.event.schedule == '0 10 * * 5' ||
+       github.event.inputs.routine == 'methodology-review')
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    permissions:
+      contents: read
+      issues: write
+    env:
+      CLAUDE_CODE_OAUTH_TOKEN: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
+      ISSUE_TITLE: "methodology-review: weekly offensive-docs tooling audit"
+    steps:
+      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+      - name: Load the pinned Claude Code version
+        # Read the canonical pin from the vendored core/ subtree — no hardcoded duplicate to drift.
+        run: grep '^CLAUDE_CODE_VERSION=' core/scripts/tool-versions.env >>"$GITHUB_ENV"
+      - name: Install Claude Code CLI (pinned)
+        # Fail fast if the pin didn't load — never silently fall back to a floating `latest`.
+        run: npm install -g "@anthropic-ai/claude-code@${CLAUDE_CODE_VERSION:?not loaded from core/scripts/tool-versions.env}"
+      - name: Run /methodology-review
+        run: |
+          claude -p "/methodology-review" \
+            --model opus \
+            --permission-mode default \
+            --allowedTools "Read,Grep,Glob,Bash(git ls-files:*),Bash(ls:*)" \
+            --output-format text | tee "$RUNNER_TEMP/methodology-review.md"
+      - name: File the report as an issue
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: bash .github/workflows/file-routine-issue.sh "$ISSUE_TITLE" "$RUNNER_TEMP/methodology-review.md"
