@@ -324,6 +324,7 @@ Active Directory — attack paths
 # Map the domain (`bhce` wraps the CE-ready collection):
 bhce <ip_address> <user> <password> <domain>
 nxc ldap <ip_address> -u <user> -p <password> --bloodhound --collection All --dns-server <ip_address>
+# bloodhound-python here is the CE collector from the `bloodhound-ce-python` pkg — NOT the legacy 'bloodhound.py':
 bloodhound-python -u <user> -p <password> -d <domain> -ns <ip_address> -c All
 
 # Escalation primitives: AS-REP / Kerberoast (above) / unconstrained-deleg / GenericAll / DCSync.

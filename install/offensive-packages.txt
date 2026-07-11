@@ -31,6 +31,13 @@ bloodyad             # raw-LDAP shadow-creds / DACL / RBCD / attribute writes (+
 #                     stealthy pre-auth spray that aborts before the password stage, but nxc
 #                     covers userenum/asreproast. NOT a fast-mover — dropped from redup's
 #                     go-loop (re-fetching an unchanging @latest was a no-op).
+# printerbug.py     → UPSTREAM (krbrelayx, github.com/dirkjanm/krbrelayx): the classic one-shot
+#                     MS-RPRN spooler coerce hacktheplanet cites on the coercion line. coercer
+#                     (above) already covers this vector from apt — printerbug.py is the
+#                     lighter single-trigger alternative, dropped in via git, not apt.
+# PKINITtools       → UPSTREAM (github.com/dirkjanm/PKINITtools): gettgtpkinit.py + getnthash.py,
+#                     the cert→NT-hash step of the coerce→ADCS→PKINIT→DCSync chain in
+#                     hacktheplanet's AD CS section. Not in apt — git clone / pipx.
 
 # ── BloodHound CE + collectors ────────────────────────────────────────────────
 # BloodHound CE itself is the Postgres-backed web app — run it via the official
@@ -70,6 +77,8 @@ exploitdb            # searchsploit — offline Exploit-DB CLI; redup -u keeps i
 # TeamFiltration    → UPSTREAM: not in apt (dotnet) — github.com/Flangvik/TeamFiltration
 #                     (M365/Entra enum + password spray + exfil; the tool behind
 #                     hacktheplanet's M365 flow)
+# onedrive_enum.py  → UPSTREAM (github.com/nyxgeek/onedrive_user_enum): M365 user validation
+#                     via OneDrive (hacktheplanet's M365 enum line). Not in apt — git clone.
 
 # ── C2 / adversary emulation ──────────────────────────────────────────────────
 metasploit-framework
