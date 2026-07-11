@@ -8,12 +8,19 @@
 # back into an existing one fast. The session is rooted at the engagement dir and
 # its $ENGAGEMENT env var is set, so `bhce` / `logshell` target the right tree.
 
+# Fail fast on errors, unset vars, and broken pipes. Two commands are expected to
+# return non-zero: the close-prompt read on EOF (guarded with `|| true`), and fzf
+# when the operator cancels the picker — for that one we capture the exit code and
+# treat only fzf's cancel statuses (1 = no match, 130 = ESC) as graceful, so any
+# other failure (e.g. 127 = fzf not installed) still surfaces instead of masking.
+set -euo pipefail
+
 # Honor the env if the shell exported it; else fall back to the Core default.
 ENGAGEMENTS_DIR="${ENGAGEMENTS_DIR:-$HOME/engagements}"
 
 if [[ ! -d "$ENGAGEMENTS_DIR" ]]; then
 	echo "No engagements dir at $ENGAGEMENTS_DIR — run 'mkengagement <name>' first."
-	read -r -p "Press enter to close…" _
+	read -r -p "Press enter to close…" _ || true
 	exit 0
 fi
 
@@ -23,7 +30,16 @@ selected=$(find "$ENGAGEMENTS_DIR" -mindepth 1 -maxdepth 1 -type d 2>/dev/null |
 	fzf \
 		--prompt="Engagement ❯ " \
 		--preview="bat --color=always --style=plain {}/scope/scope.txt 2>/dev/null || eza --icons --tree --level=1 {}" \
-		--preview-window="right:55%:wrap:border-left")
+		--preview-window="right:55%:wrap:border-left") || rc=$?
+
+# fzf exits 130 (ESC) or 1 (no match) on a normal operator cancel — treat those as
+# a graceful no-op. Any other non-zero (e.g. 127 = fzf not installed) is a real
+# failure and should surface rather than silently exit 0 with an empty selection.
+rc=${rc:-0}
+if ((rc != 0 && rc != 1 && rc != 130)); then
+	echo "tmux-eng: picker failed (exit $rc)" >&2
+	exit "$rc"
+fi
 
 [[ -z "$selected" ]] && exit 0
 
