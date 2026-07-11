@@ -8,12 +8,17 @@
 # back into an existing one fast. The session is rooted at the engagement dir and
 # its $ENGAGEMENT env var is set, so `bhce` / `logshell` target the right tree.
 
+# Fail fast on errors, unset vars, and broken pipes. The two commands expected to
+# return non-zero — the close-prompt read on EOF, and fzf when the operator
+# cancels the picker — are explicitly guarded with `|| true` below.
+set -euo pipefail
+
 # Honor the env if the shell exported it; else fall back to the Core default.
 ENGAGEMENTS_DIR="${ENGAGEMENTS_DIR:-$HOME/engagements}"
 
 if [[ ! -d "$ENGAGEMENTS_DIR" ]]; then
 	echo "No engagements dir at $ENGAGEMENTS_DIR — run 'mkengagement <name>' first."
-	read -r -p "Press enter to close…" _
+	read -r -p "Press enter to close…" _ || true
 	exit 0
 fi
 
@@ -23,7 +28,7 @@ selected=$(find "$ENGAGEMENTS_DIR" -mindepth 1 -maxdepth 1 -type d 2>/dev/null |
 	fzf \
 		--prompt="Engagement ❯ " \
 		--preview="bat --color=always --style=plain {}/scope/scope.txt 2>/dev/null || eza --icons --tree --level=1 {}" \
-		--preview-window="right:55%:wrap:border-left")
+		--preview-window="right:55%:wrap:border-left") || true
 
 [[ -z "$selected" ]] && exit 0
 
