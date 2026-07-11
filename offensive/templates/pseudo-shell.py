@@ -36,8 +36,10 @@ BASE_URL = sys.argv[1] if len(sys.argv) > 1 else "http://127.0.0.1:8080"
 
 # Proxy everything through Burp by default so you have full request history to
 # debug against (start Burp, or comment this out). Mirrors IppSec's habit.
-# Override with the HTTP_PROXY env var for a non-default Burp port / upstream.
-_PROXY = os.environ.get("HTTP_PROXY", "http://127.0.0.1:8080")
+# Override with the HTTP_PROXY / http_proxy env var for a non-default Burp port or
+# upstream; an empty or unset value falls back to the default. Burp uses one listener
+# for both schemes, so http and https share the proxy.
+_PROXY = os.environ.get("HTTP_PROXY") or os.environ.get("http_proxy") or "http://127.0.0.1:8080"
 PROXIES = {"http": _PROXY, "https": _PROXY}
 
 # Bracket your output so it's trivially grep-able out of the page. If your sink

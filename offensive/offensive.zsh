@@ -141,7 +141,7 @@ mkengagement() {
   name="$(date +%Y%m%d)-${slug}"
   root="$ENGAGEMENTS_DIR/$name"
   if [[ -d "$root" ]]; then
-    echo "Engagement already exists: $root"; export ENGAGEMENT="$root"; cd "$root"; return 0
+    echo "Engagement already exists: $root"; cd "$root" || return 1; export ENGAGEMENT="$root"; return 0
   fi
   mkdir -p "$root"/{scope,recon,scans,loot/{creds,bloodhound,hashes},web,screenshots,exploit,report}
   cat > "$root/scope/scope.txt" <<EOF
