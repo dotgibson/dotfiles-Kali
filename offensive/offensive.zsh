@@ -141,7 +141,7 @@ mkengagement() {
   name="$(date +%Y%m%d)-${slug}"
   root="$ENGAGEMENTS_DIR/$name"
   if [[ -d "$root" ]]; then
-    echo "Engagement already exists: $root"; export ENGAGEMENT="$root"; cd "$root"; return 0
+    echo "Engagement already exists: $root"; cd "$root" || return 1; export ENGAGEMENT="$root"; return 0
   fi
   mkdir -p "$root"/{scope,recon,scans,loot/{creds,bloodhound,hashes},web,screenshots,exploit,report}
   cat > "$root/scope/scope.txt" <<EOF
@@ -159,8 +159,8 @@ CONSTRAINTS:          # no-DoS, business hours only, data-handling, etc.
 EMERGENCY  :          # client contact + your team lead, for "stop" calls
 EOF
   : > "$root/notes.md"
+  cd "$root" || return 1
   export ENGAGEMENT="$root"
-  cd "$root"
   echo "✓ engagement at $root  (\$ENGAGEMENT set)"
   echo "  → fill in scope/scope.txt BEFORE you run anything."
   ${EDITOR:-nvim} "$root/scope/scope.txt"
@@ -175,7 +175,8 @@ eng() {
         | fzf --prompt="Engagement ❯ " \
               --preview="bat --color=always {}/scope/scope.txt 2>/dev/null || ls -la {}")
   [[ -z "$sel" ]] && return 0
-  export ENGAGEMENT="$sel"; cd "$sel"
+  cd "$sel" || return 1
+  export ENGAGEMENT="$sel"
 }
 
 # logshell — record a full terminal session into the engagement's notes for the
