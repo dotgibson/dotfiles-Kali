@@ -31,7 +31,7 @@ bloodyad             # raw-LDAP shadow-creds / DACL / RBCD / attribute writes (+
 #                     stealthy pre-auth spray that aborts before the password stage, but nxc
 #                     covers userenum/asreproast. NOT a fast-mover — dropped from redup's
 #                     go-loop (re-fetching an unchanging @latest was a no-op).
-# printerbug.py     → from krbrelayx (github.com/dirkjanm/krbrelayx): the classic one-shot
+# printerbug.py     → UPSTREAM (krbrelayx, github.com/dirkjanm/krbrelayx): the classic one-shot
 #                     MS-RPRN spooler coerce hacktheplanet cites on the coercion line. coercer
 #                     (above) already covers this vector from apt — printerbug.py is the
 #                     lighter single-trigger alternative, dropped in via git, not apt.
