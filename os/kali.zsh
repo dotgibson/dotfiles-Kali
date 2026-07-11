@@ -3,11 +3,18 @@
 # Built for WSL2: clipboard rides Core's clip (clip.exe), GUI via WSLg.
 [[ $- == *i* ]] || return 0
 
-[[ -d "$HOME/.local/bin" ]] && export PATH="$HOME/.local/bin:$PATH"
-[[ -d "$HOME/.cargo/bin"  ]] && export PATH="$HOME/.cargo/bin:$PATH"
+[[ -d "$HOME/.local/bin" && ":$PATH:" != *":$HOME/.local/bin:"* ]] && export PATH="$HOME/.local/bin:$PATH"
+[[ -d "$HOME/.cargo/bin" && ":$PATH:" != *":$HOME/.cargo/bin:"* ]] && export PATH="$HOME/.cargo/bin:$PATH"
 
 _IS_WSL=0
-if [[ -n "${WSL_DISTRO_NAME:-}" ]] || grep -qiE 'microsoft|wsl' /proc/version 2>/dev/null; then _IS_WSL=1; fi
+if [[ -n "${WSL_DISTRO_NAME:-}" ]]; then
+  _IS_WSL=1
+elif [[ -r /proc/version ]]; then
+  # zsh reads the file directly (no grep/cat fork) — WSL kernels tag /proc/version.
+  _pv=$(</proc/version)
+  [[ "${_pv:l}" == *microsoft* || "${_pv:l}" == *wsl* ]] && _IS_WSL=1
+  unset _pv
+fi
 
 # clipboard -> Core's cross-OS scripts (under WSL these call clip.exe / Get-Clipboard)
 command -v clip       >/dev/null && alias pbcopy='clip'
@@ -52,7 +59,9 @@ fi
 
 unset _IS_WSL
 
-# auto-start / attach tmux (skip inside tmux, VS Code, or a non-interactive shell)
-if command -v tmux >/dev/null 2>&1 && [[ -z "$TMUX" && -t 1 && "$TERM_PROGRAM" != "vscode" ]]; then
+# auto-start / attach tmux (skip inside tmux, VS Code, a non-interactive shell, or
+# when KALI_NO_TMUX is set — an opt-out for scripted logins, parity with Windows'
+# PSMUX_NO_AUTOLAUNCH).
+if command -v tmux >/dev/null 2>&1 && [[ -z "$TMUX" && -z "${KALI_NO_TMUX:-}" && -t 1 && "$TERM_PROGRAM" != "vscode" ]]; then
   tmux attach -t main 2>/dev/null || tmux new-session -s main
 fi
