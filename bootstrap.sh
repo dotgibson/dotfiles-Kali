@@ -135,6 +135,12 @@ provision() {
     blib_say "yazi (cargo build from source — several minutes, output below)"
     cargo install --force yazi-build || true
   fi
+  # viddy (watch replacement; Core aliases watch->viddy, HAVE_VIDDY-guarded) is a Rust
+  # CLI, not in Debian/Kali apt — build from source via cargo.
+  if ! command -v viddy >/dev/null && command -v cargo >/dev/null; then
+    blib_say "viddy (cargo — watch replacement; not in apt)"
+    cargo install --locked viddy >/dev/null 2>&1 || true
+  fi
   # uv — Astral's Python package/project manager (not in apt). Installs to ~/.local/bin.
   if ! command -v uv >/dev/null && [[ ! -x "$HOME/.local/bin/uv" ]]; then
     blib_say "uv (installer)"
