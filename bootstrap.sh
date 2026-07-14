@@ -161,6 +161,7 @@ provision() {
   command -v doggo >/dev/null 2>&1 || { blib_say "doggo (go install)"; _dotfiles_go_install github.com/mr-karan/doggo/cmd/doggo@latest doggo; }
   command -v carapace >/dev/null 2>&1 || { blib_say "carapace (go install — not in Debian)"; _dotfiles_go_install github.com/carapace-sh/carapace-bin/cmd/carapace@latest carapace; }
   command -v sesh >/dev/null 2>&1 || { blib_say "sesh (go install — /v2 module path)"; _dotfiles_go_install github.com/joshmedeski/sesh/v2@latest sesh; }
+  command -v viddy >/dev/null 2>&1 || { blib_say "viddy (go install — watch replacement, not in Debian)"; _dotfiles_go_install github.com/sachaos/viddy@latest viddy; }
 
   # op — 1Password CLI, from 1Password's official signed apt repo. Whole block is
   # guarded on `command -v op` and each step is best-effort so it can't abort bootstrap.
