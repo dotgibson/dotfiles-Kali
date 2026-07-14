@@ -135,6 +135,12 @@ provision() {
     blib_say "yazi (cargo build from source — several minutes, output below)"
     cargo install --force yazi-build || true
   fi
+  # viddy (watch replacement; Core aliases watch->viddy, HAVE_VIDDY-guarded) is a Rust
+  # CLI, not in Debian/Kali apt — build from source via cargo.
+  if ! command -v viddy >/dev/null && command -v cargo >/dev/null; then
+    blib_say "viddy (cargo — watch replacement; not in apt)"
+    cargo install --locked viddy >/dev/null 2>&1 || true
+  fi
   # uv — Astral's Python package/project manager (not in apt). Installs to ~/.local/bin.
   if ! command -v uv >/dev/null && [[ ! -x "$HOME/.local/bin/uv" ]]; then
     blib_say "uv (installer)"
@@ -161,7 +167,6 @@ provision() {
   command -v doggo >/dev/null 2>&1 || { blib_say "doggo (go install)"; _dotfiles_go_install github.com/mr-karan/doggo/cmd/doggo@latest doggo; }
   command -v carapace >/dev/null 2>&1 || { blib_say "carapace (go install — not in Debian)"; _dotfiles_go_install github.com/carapace-sh/carapace-bin/cmd/carapace@latest carapace; }
   command -v sesh >/dev/null 2>&1 || { blib_say "sesh (go install — /v2 module path)"; _dotfiles_go_install github.com/joshmedeski/sesh/v2@latest sesh; }
-  command -v viddy >/dev/null 2>&1 || { blib_say "viddy (go install — watch replacement, not in Debian)"; _dotfiles_go_install github.com/sachaos/viddy@latest viddy; }
 
   # op — 1Password CLI, from 1Password's official signed apt repo. Whole block is
   # guarded on `command -v op` and each step is best-effort so it can't abort bootstrap.
