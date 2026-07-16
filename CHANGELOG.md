@@ -20,6 +20,31 @@ GitHub Release; `sync-fanout.yml` then opens the Kali sync PR.
 
 ## [Unreleased]
 
+## [v2.4.0] - 2026-07-16
+
+### Added
+
+- **GCP parity — 2 new red↔blue pairs (+4 entries) and a recon entry (+1).** Brings
+  GCP up from a single pair to rough parity with the other big-three clouds.
+  **Persistence** (`T1098`): IAM policy backdoor — `setIamPolicy` binding a rogue
+  principal — detected on the `SetIamPolicy` `ADD` binding delta in Cloud Audit
+  Logs. **Defense Evasion** (`T1562.008`): Cloud Audit log tamper — `DeleteSink` /
+  `auditConfigs` strip — detected via the self-witnessing Admin Activity events
+  (plus a Data Access gap monitor). Also adds an unpaired **Discovery**
+  (`T1580`/`T1526`/`T1069.003`) `gcp-enum-recon` entry (projects / Asset Inventory /
+  IAM blast-radius mapping), mirroring the unpaired on-prem `smb-enum-nxc`.
+
+### Changed
+
+- **`asrep-probing-4771` retargeted to the real AS-REP roast artifact.** The
+  detection now keys primarily on a _successful_ `4768` with pre-authentication
+  type 0 (the AS-REP etype is negotiated — often RC4 `0x17`, AES where RC4 is
+  disabled — so the clause keys on the type-0 invariant, not the cipher) — the
+  roastable AS-REP its red mate actually emits — and keeps
+  the `4771 0x18` one-source-many-accounts burst as a secondary Kerbrute
+  enumeration/spray tell. Previously it only saw the collateral `4771` probing, not
+  the roast itself.
+
 ## [v2.3.0] - 2026-07-10
 
 ### Added
@@ -120,7 +145,7 @@ GitHub Release; `sync-fanout.yml` then opens the Kali sync PR.
     rights; detect journal `add Owner` / `add Maintainer` (T1098).
   - `pypi-trusted-publisher` ↔ `pypi-trusted-publisher-audit` — register an attacker-controlled
     OIDC trusted publisher for a credential-less publish backdoor; detect an add-`trusted
-    publisher` journal entry (T1098).
+publisher` journal entry (T1098).
 
 - **npm registry** platform (3 companion-only red↔blue pairs) — the software supply-chain
   seam, detected over the npm account/org audit log (`product: npm`, field `action`):
@@ -129,7 +154,7 @@ GitHub Release; `sync-fanout.yml` then opens the Kali sync PR.
   - `npm-owner-add` ↔ `npm-owner-audit` — add a rogue maintainer for durable publish rights;
     detect `package.owner_add` / `team.user_add` (T1098).
   - `npm-2fa-disable` ↔ `npm-2fa-audit` — disable require-2FA-to-publish (`npm access set
-    mfa=none`) so a stolen token ships quietly; detect `package.edit` `mfa=none` (T1562.001).
+mfa=none`) so a stolen token ships quietly; detect `package.edit` `mfa=none` (T1562.001).
 
 - **Cloudflare edge** platform (3 companion-only red↔blue pairs) — detections over the
   Cloudflare account audit log (`product: cloudflare`, fields `action.type`/`resource.type`):
