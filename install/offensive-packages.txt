@@ -18,30 +18,32 @@ nmap
 rustscan             # fast port sweep that hands off to nmap -sC -sV; ships in kali-linux-default, list it for slim installs
 responder
 coercer              # NTLM coercion trigger (PetitPotam/PrinterBug/DFSCoerce/ShadowCoerce) — the piece that KICKS the relay/ESC8 chain (responder/ntlmrelayx have no trigger of their own)
+krbrelayx            # dirkjanm's Kerberos-relay toolkit (printerbug/krbrelayx/addspn/dnstool) — now apt-packaged, so printerbug is no longer a git-clone. The Kerberos-relay COMPLEMENT to coercer's trigger + ntlmrelayx's NTLM relay, not a dup
 impacket-scripts     # ~60 scripts: secretsdump, psexec, ntlmrelayx, GetUserSPNs…
 evil-winrm
-certipy-ad           # AD CS abuse (ESC1–ESC17, since Certipy v5.1.0)
+certipy-ad           # AD CS abuse (ESC1–ESC16, +ESC17 proposed, since Certipy v5.1.0)
 python3-ldapdomaindump  # apt name is python3-ldapdomaindump (bare 'ldapdomaindump' isn't packaged)
 enum4linux-ng
 smbmap
 bloodyad             # raw-LDAP shadow-creds / DACL / RBCD / attribute writes (+ autobloody to auto-exploit a BloodHound-graphed path)
+gpp-decrypt          # decrypt the GPP cpassword blob from SYSVOL Groups.xml (the decrypt step of the GPP attack); ships in kali-linux-default, list it for slim installs
+freerdp3-x11         # xfreerdp — the RDP client for the 3389 connect line (pkg is freerdp2-x11 on older Kali); ships in kali-linux-default, list it for slim installs
 # kerbrute          → UPSTREAM: not in apt — grab the release binary or `go install`
 #                     github.com/ropnop/kerbrute (see ~/hacktheplanet).
 #                     NOTE: upstream FROZEN (last release v1.0.3, Dec 2019). Keep it for the
 #                     stealthy pre-auth spray that aborts before the password stage, but nxc
 #                     covers userenum/asreproast. NOT a fast-mover — dropped from redup's
 #                     go-loop (re-fetching an unchanging @latest was a no-op).
-# printerbug.py     → UPSTREAM (krbrelayx, github.com/dirkjanm/krbrelayx): the classic one-shot
-#                     MS-RPRN spooler coerce hacktheplanet cites on the coercion line. coercer
-#                     (above) already covers this vector from apt — printerbug.py is the
-#                     lighter single-trigger alternative, dropped in via git, not apt.
+#                     printerbug.py moved to apt — see the `krbrelayx` package above.
 # PKINITtools       → UPSTREAM (github.com/dirkjanm/PKINITtools): gettgtpkinit.py + getnthash.py,
 #                     the cert→NT-hash step of the coerce→ADCS→PKINIT→DCSync chain in
 #                     hacktheplanet's AD CS section. Not in apt — git clone / pipx.
 
 # ── BloodHound CE + collectors ────────────────────────────────────────────────
-# BloodHound CE itself is the Postgres-backed web app — run it via the official
-# docker-compose (NOT apt). The COLLECTORS are what you install on the box:
+# BloodHound CE itself is the Postgres-backed web app — stand it up with SpecterOps'
+# official `bloodhound-cli` (Go binary, curl the release / `go install`; NOT apt), which
+# now owns the compose file under an XDG config dir. The COLLECTORS are what you install
+# on the box:
 bloodhound-ce-python # CE-compatible collector. NOTE: the 'bloodhound.py' apt pkg
 #                    # is the LEGACY (≤4.3.1) collector — its zips don't ingest into CE
 #                    # nxc's --bloodhound module also collects (see offensive.zsh `bhce`)
@@ -53,6 +55,7 @@ bloodhound-ce-python # CE-compatible collector. NOTE: the 'bloodhound.py' apt pk
 # SharpHound (the C# collector) is dropped on the target, not installed here.
 
 # ── Web app / API ─────────────────────────────────────────────────────────────
+whatweb              # HTTP fingerprint — the first line of the web-enum fold; ships in kali-linux-default, list it for slim installs
 burpsuite
 ffuf
 feroxbuster
@@ -60,11 +63,23 @@ gobuster
 nikto
 wpscan               # WordPress enum/scan (needs a free API token for vuln data); ships in kali-linux-default
 sqlmap
+weevely              # PHP webshell generator/manager (the exploitdev post-exploit webshell); ships in kali-linux-default, list it for slim installs
 nuclei               # ProjectDiscovery — templated scanner (AI templates in 2026)
 httpx-toolkit        # ProjectDiscovery httpx — bare 'httpx' apt pkg is the python lib, not this
 # katana            → UPSTREAM (Go): not in apt —
 #                     go install github.com/projectdiscovery/katana/cmd/katana@latest
 # (wfuzz dropped — unreferenced by any doc; ffuf/feroxbuster/gobuster cover fuzzing)
+
+# ── Service enumeration (the per-port folds in hacktheplanet) ─────────────────
+# All ship in kali-linux-default; listed here so a slim install (and anyone
+# following the port folds) has the primary command of each fold in PATH.
+onesixtyone          # SNMP community-string sweep (SNMP-161 fold)
+snmp                 # provides snmpwalk / snmpbulkwalk (SNMP-161 fold)
+snmp-check           # human-readable SNMP enumeration (SNMP-161 fold)
+smtp-user-enum       # SMTP VRFY/EXPN/RCPT user enum (SMTP-25 fold)
+ssh-audit            # SSH algorithm/config audit (SSH-22 fold)
+dnsenum              # DNS enumeration + zone-transfer attempt (DNS-53 fold)
+nbtscan              # NetBIOS name sweep (SMB fold)
 
 # ── Recon / OSINT ─────────────────────────────────────────────────────────────
 amass
@@ -88,6 +103,7 @@ metasploit-framework
 # caldera           → UPSTREAM/docker (MITRE adversary emulation, ATT&CK-mapped)
 
 # ── Credential attacks ────────────────────────────────────────────────────────
+hashid               # ID the hash mode before you burn GPU — the cracking entrypoint; ships in kali-linux-default
 hashcat
 john                 # john-the-ripper
 hydra
@@ -98,6 +114,7 @@ proxychains4
 chisel
 ligolo-ng            # modern reverse-tunnel pivot (upstream if repo build lags)
 socat
+rlwrap               # readline wrapper for the reverse-shell listener (rlwrap nc -lvnp …); ships in kali-linux-default, list it for slim installs
 
 # ── Notes / reporting (keep findings OUT of this repo — see offensive.zsh) ─────
 # Engagement data → $ENGAGEMENTS_DIR (~/engagements), gitignored as a backstop.
