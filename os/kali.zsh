@@ -1,4 +1,4 @@
-# dotfiles-Kali/os/kali.zsh  ->  ~/.config/zsh/os.zsh
+# dotfiles-Kali/os/kali.zsh  ->  ~/.config/zsh/80-os.zsh  (v4: numbered OS-layer fragment)
 # Kali (Debian/apt) OS-native shell layer. Loaded AFTER Core, BEFORE offensive.
 # Built for WSL2: clipboard rides Core's clip (clip.exe), GUI via WSLg.
 [[ $- == *i* ]] || return 0
