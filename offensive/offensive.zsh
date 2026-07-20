@@ -16,7 +16,7 @@
 # (default ~/engagements), which the repo .gitignore also blocks as a backstop.
 # ──────────────────────────────────────────────────────────────────────────────
 
-# Interactive shells only — scripts get raw POSIX (mirrors Core's tools.zsh).
+# Interactive shells only — scripts get raw POSIX (mirrors Core's 00-tools.zsh).
 [[ $- == *i* ]] || return 0
 
 _have() { command -v "$1" >/dev/null 2>&1; }
@@ -220,7 +220,7 @@ lhost() {
       ip=$(ip -4 -brief addr show "$iface" 2>/dev/null | awk '{print $3}' | cut -d/ -f1)
       [[ -n "$ip" ]] && break
     done
-    # Fallback: the default-route SOURCE IP (Core's idiom in functions.zsh) — picks
+    # Fallback: the default-route SOURCE IP (Core's idiom in 30-functions.zsh) — picks
     # the routable LAN address, not the first global iface (which may be a docker bridge).
     [[ -z "$ip" ]] && ip=$(ip route get 1.1.1.1 2>/dev/null \
                             | awk '{for(i=1;i<=NF;i++) if($i=="src"){print $(i+1);exit}}')

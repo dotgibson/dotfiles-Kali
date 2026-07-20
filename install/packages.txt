@@ -1,7 +1,7 @@
 # dotfiles-Kali :: base CLI stack (apt / Debian names)
 # One package per line. '#' comments and blank lines are ignored by bootstrap.sh.
 # Note: on Debian/Kali, `bat` ships the binary `batcat` and `fd-find` ships
-# `fdfind` — Core's tools.zsh already resolves those alt binary names.
+# `fdfind` — Core's 00-tools.zsh already resolves those alt binary names.
 
 # shell + multiplexer
 zsh

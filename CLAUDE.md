@@ -22,7 +22,7 @@ Three things that actually bite on this repo:
 - The zsh loader adds an **`offensive` stage** (`… os offensive local`) on top of
   the Core order — keep offensive config in that layer, not in `core/`.
 - **Debian renames binaries** — `bat`→`batcat`, `fd-find`→`fdfind`. Core's
-  `tools.zsh` already resolves both; don't "fix" aliases for it.
+  `00-tools.zsh` already resolves both; don't "fix" aliases for it.
 - **WSL2 is NAT'd** — a listener/reverse shell isn't LAN-reachable until mirrored
   networking is enabled in the *Windows-side* `%UserProfile%\.wslconfig`
   (`networkingMode=mirrored`), **not** `/etc/wsl.conf`.
