@@ -141,6 +141,13 @@ provision() {
     blib_say "viddy (cargo — watch replacement; not in apt)"
     cargo install --locked viddy >/dev/null 2>&1 || true
   fi
+  # ast-grep (AST-aware structural search/rewrite; Core gates it on HAVE_ASTGREP) is a Rust
+  # CLI not in Debian/Kali apt — build from source via cargo, like viddy. Its git-diff
+  # companion difftastic IS packaged (see install/packages.txt).
+  if ! command -v ast-grep >/dev/null && command -v cargo >/dev/null; then
+    blib_say "ast-grep (cargo — structural search; not in apt)"
+    cargo install --locked ast-grep >/dev/null 2>&1 || true
+  fi
   # uv — Astral's Python package/project manager (not in apt). Installs to ~/.local/bin.
   if ! command -v uv >/dev/null && [[ ! -x "$HOME/.local/bin/uv" ]]; then
     blib_say "uv (installer)"
