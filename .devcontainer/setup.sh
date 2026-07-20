@@ -18,7 +18,7 @@ apt-get install -y --no-install-recommends \
 # Nice-to-have CLIs that Core's aliases light up when present — best-effort, since Core
 # degrades gracefully for anything missing. stderr stays VISIBLE (an apt lock / repo error
 # should be diagnosable in a broken Codespace), with a concise note if the set can't be
-# installed. (Debian/Kali rename bat->batcat, fd-find->fdfind; Core's tools.zsh resolves both.)
+# installed. (Debian/Kali rename bat->batcat, fd-find->fdfind; Core's 00-tools.zsh resolves both.)
 apt-get install -y --no-install-recommends fzf ripgrep bat fd-find eza neovim jq ||
   echo "   note: some optional CLIs were unavailable — the shell still works (Core skips missing tools)"
 
