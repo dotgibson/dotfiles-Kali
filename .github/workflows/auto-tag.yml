@@ -4,7 +4,7 @@ name: auto-tag
 # on main. Delegates to the reusable workflow in dotfiles-core — one definition of the
 # version math + tagging (scripts/auto-tag.sh): PATCH-bump by default, idempotent (a
 # no-op when HEAD is already tagged vX.Y.Z), and it tags in CI so this repo's own tag
-# stops drifting from what it vendors. Pinned @v3.
+# stops drifting from what it vendors. Pinned @v4.
 #
 # Kali is the exception in the fleet: it carries TWO vendored lines, not one — the
 # `core/` subtree (from dotfiles-core) AND the `offensive/companion/` subtree (from
@@ -28,4 +28,4 @@ concurrency:
 
 jobs:
   tag:
-    uses: dotgibson/dotfiles-core/.github/workflows/auto-tag-call.yml@v3
+    uses: dotgibson/dotfiles-core/.github/workflows/auto-tag-call.yml@v4

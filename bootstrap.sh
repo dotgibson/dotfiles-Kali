@@ -200,7 +200,12 @@ wire_links() {
 
   # ── OFFENSIVE role layer (unique to this repo) ──────────────────────────────
   blib_say "symlinking OFFENSIVE role layer"
-  blib_link "$DOTFILES/offensive/offensive.zsh" "$CONFIG/zsh/offensive.zsh"
+  # v4: link the offensive stage as the numbered fragment 85-offensive.zsh (role band
+  # 85-94). The loader globs $ZSH_CFG/NN-*.zsh, so an unnumbered offensive.zsh would never
+  # load; band 85 sorts after the OS layer (80-os.zsh) and before host-local (99-local.zsh),
+  # preserving the old `… os offensive local` order. Drop any stale pre-v4 unnumbered link.
+  [[ -L "$CONFIG/zsh/offensive.zsh" ]] && rm -f "$CONFIG/zsh/offensive.zsh"
+  blib_link "$DOTFILES/offensive/offensive.zsh" "$CONFIG/zsh/85-offensive.zsh"
   [[ -d "$DOTFILES/offensive/templates" ]] && blib_link "$DOTFILES/offensive/templates" "$CONFIG/kali/templates"
   # The `prefix + e` engagement-session popup (os/kali.conf). It CANNOT live under
   # $CONFIG/tmux/scripts — that path is a whole-dir symlink to core/tmux/scripts (Core-
@@ -217,8 +222,9 @@ wire_links() {
   # Linked as a directory so htpx resolves entries/ relative to itself; run via `htpx`.
   [[ -d "$DOTFILES/offensive/companion" ]] && blib_link "$DOTFILES/offensive/companion" "$HOME/companion"
 
-  # The managed .zshrc loader — Kali adds the `offensive` stage just before `local`.
-  blib_write_zshrc_loader tools ui options history aliases git functions fzf bindings plugins op maint update os offensive local
+  # The managed .zshrc loader (v4): param-less — it globs the numbered fragments, so the
+  # offensive stage rides band 85 (85-offensive.zsh) with no explicit module list.
+  blib_write_zshrc_loader
 
   # A login zsh configured the XDG way reads $ZDOTDIR/.zshrc, NOT $HOME/.zshrc. With
   # the entry loader only at $HOME, a fresh login window keys its new-user check off
