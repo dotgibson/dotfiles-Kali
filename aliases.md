@@ -62,7 +62,6 @@ a few (e.g. `hethttp`) are unguarded. Engagement data lives in `$ENGAGEMENTS_DIR
 | `msf` | `msfconsole -q` | Metasploit |
 | `sliver` | `sliver-client` | Sliver C2 |
 | `seclists` | `cd "$SECLISTS_DIR"` | seclists dir present |
-| `hethttp` | `echo "serving $(pwd) on :8000"; python3 -m http.server 8000` | python3 |
 
 ### Cheat Sheet Openers
 
@@ -79,6 +78,7 @@ a few (e.g. `hethttp`) are unguarded. Engagement data lives in `$ENGAGEMENTS_DIR
 | Function | Purpose |
 |----------|---------|
 | `lhost [iface]` | Print attacker IP — prefers VPN (tun0/tun1/tap0/wg0), falls back to default route |
+| `hethttp [port]` | Quick delivery web server on 0.0.0.0 (optional port, default 8000); advertises the reachable callback URL via `lhost` |
 | `note [text]` | Append timestamped entry to engagement `notes.md`; no args opens it in `$EDITOR` |
 | `ttyup` | Print the TTY stabilisation sequence with attacker rows/cols pre-filled |
 | `cde` | `cd` to the active `$ENGAGEMENT` directory |
