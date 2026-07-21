@@ -29,6 +29,9 @@ yq-go          # mikefarah's Go `yq` — Debian ALSO ships `yq` (Python kislyuk)
                # we want the Go one, so use `yq-go` and NOT plain `yq`.
 glow           # markdown renderer — recent (Debian sid → Kali rolling); may lag migration
 gum            # charmbracelet TUI toolkit — recent (Debian sid → Kali rolling); may lag migration
+difftastic     # structural git diff (binary: difft) — Core wires `gdft` when HAVE_DIFFT; opt-in,
+               # recent (Debian sid → Kali rolling); may lag migration. (ast-grep, its search
+               # counterpart, isn't in apt — bootstrap.sh cargo-installs it, like viddy.)
 # core-doctor also wants: doggo, carapace, sesh, op — those are go/vendor and are
 # installed by bootstrap.sh (not in apt / not reliably packaged), not listed here.
 

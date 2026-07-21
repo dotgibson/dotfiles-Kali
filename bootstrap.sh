@@ -129,7 +129,7 @@ provision() {
     blib_say "mise (installer)"
     curl -fsSL https://mise.run | sh || true
   fi
-  if ! command -v yazi >/dev/null && command -v cargo >/dev/null; then
+  if ! command -v yazi >/dev/null && [[ ! -x "$HOME/.cargo/bin/yazi" ]] && command -v cargo >/dev/null; then
     # yazi-fm/yazi-cli can't be installed directly from crates.io (their build.rs panics);
     # upstream requires the yazi-build orchestrator, which pulls in both binaries.
     blib_say "yazi (cargo build from source — several minutes, output below)"
@@ -137,9 +137,18 @@ provision() {
   fi
   # viddy (watch replacement; Core aliases watch->viddy, HAVE_VIDDY-guarded) is a Rust
   # CLI, not in Debian/Kali apt — build from source via cargo.
-  if ! command -v viddy >/dev/null && command -v cargo >/dev/null; then
+  if ! command -v viddy >/dev/null && [[ ! -x "$HOME/.cargo/bin/viddy" ]] && command -v cargo >/dev/null; then
     blib_say "viddy (cargo — watch replacement; not in apt)"
     cargo install --locked viddy >/dev/null 2>&1 || true
+  fi
+  # ast-grep (AST-aware structural search/rewrite; Core gates it on HAVE_ASTGREP) is a Rust
+  # CLI not in Debian/Kali apt — build from source via cargo, like viddy. Its git-diff
+  # companion difftastic IS packaged (see install/packages.txt).
+  # Check the default cargo bindir too, not just PATH: ~/.cargo/bin isn't on PATH during
+  # a fresh bootstrap (os/kali.zsh adds it), so a bare `command -v` would recompile every run.
+  if ! command -v ast-grep >/dev/null && [[ ! -x "$HOME/.cargo/bin/ast-grep" ]] && command -v cargo >/dev/null; then
+    blib_say "ast-grep (cargo — structural search; not in apt)"
+    cargo install --locked ast-grep >/dev/null 2>&1 || true
   fi
   # uv — Astral's Python package/project manager (not in apt). Installs to ~/.local/bin.
   if ! command -v uv >/dev/null && [[ ! -x "$HOME/.local/bin/uv" ]]; then
