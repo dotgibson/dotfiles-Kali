@@ -7,4 +7,4 @@
 # and update companion_sha below to the new git-subtree-split commit.
 companion_repo=dotgibson/htpx
 companion_branch=main
-companion_sha=d443b02b3e12224c789d4e273cf69b4d0304ddf7
+companion_sha=49975746dc465d1910c52509b991388cd94ea4b9
