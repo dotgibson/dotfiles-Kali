@@ -16,7 +16,9 @@ ServerHello to a JA3S; frameworks reuse these across builds, so a known-implant
 JA3/JA3S pair is a high-fidelity match regardless of destination or sleep. Maintain
 a blocklist of framework fingerprints (Zeek + community JA3 sets) and alert on any
 hit; then hunt self-signed / very-short-chain certs to a rare destination as the
-unknown-implant fallback.
+unknown-implant fallback. Prefer **JA4/JA4S** (FoxIO, 2023+, emitted by current
+Zeek) where available — JA3 is increasingly defeated by TLS randomization (uTLS),
+and JA4 is its more resilient successor.
 
 ```spl
 index=zeek sourcetype=zeek:ssl

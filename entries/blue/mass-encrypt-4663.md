@@ -2,7 +2,7 @@
 id: mass-encrypt-4663
 title: Detect mass encryption (4663 file-write burst + note drop)
 detection: splunk-spl
-event_ids: [4663]
+event_ids: [4663, 11]
 attack:
   tactic: TA0040
   techniques: [T1486]
@@ -17,6 +17,21 @@ when one `Process_Name`/host exceeds a high threshold of distinct files written 
 short window, and corroborate with a same-name note file (`readme`, `how_to_decrypt`,
 `*.<campaign-ext>`) appearing in many folders. Tune the threshold per environment;
 back it with canary files for a low-false-positive trip.
+
+Prefer the **Sysmon 11 (FileCreate)** variant as the primary: file-data SACLs are
+off by default, so the 4663 query is blind out-of-the-box, whereas Sysmon 11 needs
+no SACL.
+
+```spl
+index=sysmon EventCode=11
+| bucket _time span=1m
+| rex field=TargetFilename "(?<dir>.+)\\[^\\]+$"
+| stats dc(TargetFilename) as files, dc(dir) as dirs by _time, host, Image
+| where files>200
+| sort - files
+```
+
+The 4663 object-access variant (requires file-data SACLs enabled):
 
 ```spl
 index=wineventlog EventCode=4663 Accesses="*WriteData*"

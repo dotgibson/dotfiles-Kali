@@ -10,17 +10,27 @@ source: Sysmon Network Connection (Event ID 3) process attribution
 pair: web-service-c2-telegram
 ---
 
-The destination is trusted, so pivot off the *source process*, not the domain.
-Sysmon Event ID 3 attributes each outbound connection to its `Image`; browsers,
-Teams, and updaters talk to SaaS APIs — `powershell.exe`, `wscript.exe`, a random
-binary in `%TEMP%`, or an Office child process beaconing to `api.telegram.org` /
-`api.github.com` / `slack.com` on an interval does not. Allowlist the known
-API-consumers per host and alert on the rest, weighting unsigned images and
-user-writable paths.
+The destination is trusted, so pivot off the *source process*, not the domain — a
+domain allowlist just moves the goalposts to the next trusted SaaS (Discord,
+Dropbox, Pastebin, Google Drive, Notion are all documented web-service C2). Sysmon
+Event ID 3 attributes each outbound connection to its `Image`; browsers, mail
+clients, Teams, and updaters talk to SaaS APIs — `powershell.exe`, `wscript.exe`, a
+random binary in `%TEMP%`, or an Office child process beaconing to *any* SaaS API on
+an interval does not. Gate on the process: exclude the known API-consumers, weight
+images in user-writable paths (`\Users\`, `\AppData\`, `\Temp\`, `\ProgramData\`),
+and alert when such a process makes repeated 443 connections to a host that is rare
+*for that host*. The four domains below are a seed IOC list to triage first, **not**
+the gate.
 
 ```spl
-index=sysmon EventCode=3 (DestinationHostname="api.telegram.org" OR DestinationHostname="*.slack.com" OR DestinationHostname="api.github.com" OR DestinationHostname="gist.githubusercontent.com")
-| search NOT (Image="*\\chrome.exe" OR Image="*\\msedge.exe" OR Image="*\\firefox.exe" OR Image="*\\Teams.exe")
-| stats count, values(DestinationHostname) as dests by host, Image, User
-| where count>3
+index=sysmon EventCode=3 Initiated=true DestinationPort=443
+| search NOT (Image="*\\chrome.exe" OR Image="*\\msedge.exe" OR Image="*\\firefox.exe" OR Image="*\\Teams.exe" OR Image="*\\OneDrive.exe" OR Image="*\\outlook.exe" OR Image="*\\Dropbox.exe" OR Image="*\\slack.exe" OR Image="*\\Code.exe")
+| eval user_writable=if(match(Image,"(?i)\\\\(Users|AppData|Temp|ProgramData|Public)\\\\"),1,0)
+| bucket _time span=1h
+| stats count as conns, dc(_time) as active_hours, values(DestinationHostname) as dests by host, Image, User, DestinationIp, user_writable
+| where conns>3 AND active_hours>2
+| sort -user_writable -conns
 ```
+
+Seed list for a fast first triage (relabel, don't gate):
+`api.telegram.org`, `*.slack.com`, `api.github.com`, `gist.githubusercontent.com`.
