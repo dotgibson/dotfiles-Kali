@@ -20,6 +20,39 @@ GitHub Release; `sync-fanout.yml` then opens the Kali sync PR.
 
 ## [Unreleased]
 
+## [v2.5.0] - 2026-07-23
+
+### Added
+
+- **Cloud Collection parity — 1 new red↔blue pair (`T1530` Data from Cloud
+  Storage).** Fills the corpus's thinnest tactic: `aws-s3-mass-exfil` (bulk
+  `ListBucket` → `GetObject`/`sync`, or server-side `CopyObject` into an attacker
+  bucket) ↔ `aws-s3-exfil-cloudtrail` (per-principal object-read volume via
+  CloudTrail S3 data events, with a caveat that data events must be enabled and an
+  S3-server-access-log / `BytesDownloaded` fallback). S3 is the canonical
+  cloud-exfil target and was previously uncovered.
+
+### Changed
+
+- **`web-service-c2-beacon` inverted to a process-centric gate.** The detection now
+  triggers on non-browser / user-writable-path processes making periodic 443 SaaS
+  beacons rare-for-the-host, instead of a hardcoded 4-domain allowlist that any
+  other trusted-SaaS C2 (Discord, Dropbox, Pastebin, …) evaded silently. The four
+  domains are demoted to a labelled seed IOC list, matching the red entry's "the
+  tell is the _process_."
+- **`adcs-esc1-4886` retargeted to 4887 with a SAN-logging caveat.** Primary now
+  keys on `4887` (certificate _issued_) plus CA request-attribute auditing; adds a
+  caveat that the `4886` `upn=` parse is best-effort and can silently miss without CA
+  auditing, and separates the `5136 userCertificate` line as shadow-cred/relay
+  telemetry rather than an ESC1-SAN backstop.
+- **`mass-encrypt-4663` now ships the Sysmon-11 FileCreate variant as primary.**
+  File-data SACLs are off by default, so the 4663-only query was blind
+  out-of-the-box; the Sysmon-11 branch the prose already advertised is now
+  implemented and preferred (no SACL required).
+- **`mtls-c2-ja3` refreshed toward JA4/JA4S.** Notes that JA3 is increasingly
+  defeated by TLS randomization (uTLS) and to prefer JA4/JA4S (FoxIO, 2023+, emitted
+  by current Zeek) where available.
+
 ## [v2.4.0] - 2026-07-16
 
 ### Added
